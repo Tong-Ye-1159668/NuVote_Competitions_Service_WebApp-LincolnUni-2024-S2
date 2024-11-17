@@ -1,18 +1,122 @@
-# COMP639S2_project_2_Nu
+# Competition as a Service Platform for Conservation Groups
+#### Submitted on 03 November 2024
+This repository contains a group project developed for the COMP 639 Studio Project during Semester 2 of my Master of Applied Computing studies at Lincoln University. Building upon our "NZ ___ of the Year" platform, this web application serves as a competition management service enabling conservation groups to create and manage their own "___ of the Year" competitions to promote environmental awareness and conservation efforts in New Zealand.
 
-## Introduction
+## Try demo here!
+https://comp639nup2.pythonanywhere.com/
 
-NuVote is a web application built with Flask for managing user profiles, votes, and more. This application supports user registration, login, profile management, voting, and administrative functions.
+## Interface
+Main Page
+
+![image](https://github.com/user-attachments/assets/a4bd46c9-d743-461b-acc2-4bbfa25a4cb0)
+
+Voting Page
+
+![image](https://github.com/user-attachments/assets/4302280b-9d72-49e9-bde6-1121c999151e)
+
+Voting Result Page
+
+![image](https://github.com/user-attachments/assets/893d5ec8-5c4e-42eb-a4e6-909bec73c8d1)
+
+User Profile with Location Page
+
+![image](https://github.com/user-attachments/assets/1c99f12f-e434-4956-995c-5e99f3688bfd)
+
+User Donation Success Page
+
+![image](https://github.com/user-attachments/assets/091f6294-f39b-41c1-b820-49609861dbf0)
+
+User Management Page
+
+![image](https://github.com/user-attachments/assets/d3299396-02e8-4dfc-ad33-b435f7dd75d2)
+
+Tech Support Page
+
+![image](https://github.com/user-attachments/assets/42ac9ae0-cf0c-4887-b50a-fc5f6beb6278)
+
 
 ## Features
+- **Multi-Competition Platform**:
+  - Enables conservation groups to create and manage their own competitions.
+  - Competition approval process managed by Site Admins.
+  - Customizable competition settings for each event.
+  - Supports multiple concurrent "___ of the Year" competitions.
 
-- User authentication (login, registration, logout)
-- User profile management
-- competition setup
-- vote
-- Admin and moderator roles
-- Profile image upload and deletion
-- Error handling pages for common HTTP errors (400, 404, 500)
+- **Role Management**:
+  - **Site Admin**: Overall platform administration and competition approval.
+  - **Site Helper**: Technical support and user assistance.
+  - **Theme Admin**: Competition-specific management and settings.
+  - **Theme Scrutineer**: Competition-specific voting integrity monitoring.
+  - **Voter**: Participation across multiple competitions.
+
+- **Location Features**:
+  - Interactive maps showing competitor locations.
+  - Distance calculation from user's location to competitors.
+  - Geographic visualization of voting patterns.
+  - Integration with OpenStreetMap and Leaflet.
+  - Privacy-focused user location display.
+
+- **Tech Support System**:
+  - Integrated help desk functionality.
+  - User support request tracking.
+  - Bug reporting and resolution system.
+  - Support queue management for Site Helpers.
+  - Request status tracking and updates.
+
+- **Advanced Scrutineering**:
+  - Theme-specific ban management.
+  - Ban appeal system for users.
+  - Voting integrity dashboard.
+  - Transparent ban review process.
+  - Multi-level ban system (competition-specific and site-wide).
+
+- **Donation System**:
+  - Secure donation processing for registered charities.
+  - Tax receipt generation and management.
+  - Charity verification process.
+  - Donation tracking and reporting.
+  - Historical donation record access.
+
+- **Theme Management**:
+  - Create and manage competition/theme events.
+  - Competitor profile management.
+  - Voting period control.
+  - Results tracking and display.
+  - Competition analytics and reporting.
+
+- **Security Features**:
+  - Role-based access control.
+  - Voting integrity protection.
+  - Secure donation handling.
+  - Data privacy safeguards.
+
+## Technical Details
+- **Technologies Used**:
+  - Backend: Python (Flask)
+  - Database: MySQL
+  - Frontend: Bootstrap CSS, JavaScript
+  - Mapping: Leaflet with OpenStreetMap
+
+- **Architecture**:
+  - Multi-tenant database design
+  - Role-based access control
+  - Scalable competition management
+
+- **Security Features**:
+  - Advanced voting fraud prevention
+  - Secure user authentication
+  - Data privacy protection
+
+## Purpose
+This project emphasizes my ability to:
+- Work effectively as a team using Agile Scrum methodology with Jira for task management.
+- Collaborate efficiently using Git branch strategy for version control and code integration.
+- Design and implement complex web applications through collaborative development.
+- Manage and coordinate multiple development tasks across team members.
+
+The platform stands as a testament to our collaborative effort in delivering a comprehensive solution for conservation groups while demonstrating effective team communication and project management skills.
+
+---
 
 ## Prerequisites
 
