@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Year of Bird(YOB) is a web application built with Flask for managing user profiles, votes, and more. This application supports user registration, login, profile management, voting, and administrative functions.
+NuVote is a web application built with Flask for managing user profiles, votes, and more. This application supports user registration, login, profile management, voting, and administrative functions.
 
 ## Features
 
