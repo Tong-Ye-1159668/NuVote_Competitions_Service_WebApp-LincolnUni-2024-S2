@@ -96,7 +96,7 @@ Tech Support Page
 
 ## Technical Details
 - **Technologies Used**:
-  - Backend: Python (Flask)
+  - Backend: Python (Flask), Java
   - Database: MySQL
   - Frontend: Bootstrap CSS, JavaScript
   - Mapping: Leaflet with OpenStreetMap
