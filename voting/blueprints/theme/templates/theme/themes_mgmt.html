@@ -1,0 +1,51 @@
+{% extends 'layout.html' %}
+
+{% block title %}Theme Approval{% endblock %}
+
+{% block content %}
+<div>
+  <h1>Theme Approval</h1>
+  
+      <ul class="nav nav-underline" id="themeMgmtTabs" role="tablist">
+        {% if CURRENT_USER.role == 'siteAdmin' %}
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active" id="pending-tab" href="#pending" data-bs-toggle="tab" role="tab" aria-controls="pending" aria-selected="true">Pending for Approval</a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link" id="approved-tab" href="#approved" data-bs-toggle="tab" role="tab" aria-controls="approved" aria-selected="false">Rejected & Accepted</a>
+        </li>
+        {% endif %}
+      </ul>
+      <div class="tab-content" id="themeMgmtTabsContent">
+        <div class="tab-pane fade show active pt-2" id="pending" role="tabpanel" aria-labelledby="pending" tabindex="0">
+            {% include 'theme/components/theme_pending_tab.html' %}
+        </div>
+        <div class="tab-pane fade pt-2" id="approved" role="tabpanel" aria-labelledby="approved" tabindex="0">
+            {% include 'theme/components/theme_approved_tab.html' %}
+        </div>
+      </div>
+</div>
+
+<!-- {% include "theme/components/approve_theme_modal.html" %} -->
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view');
+    if (view) {
+      const tab = document.getElementById(view+'-tab');
+      if (tab) {
+        tab.click();
+      }
+    }
+
+    const hash = window.location.hash;
+    if (hash) {
+      const tab = document.getElementById(hash.substring(1)+'-tab');
+      if (tab) {
+        tab.click();
+      }
+    }
+  });
+</script>
+{% endblock %}

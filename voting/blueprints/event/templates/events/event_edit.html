@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+
+{% block title %}Edit Event{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Back Button -->
+    {{ macros.back_button() }}
+
+    <!-- Event Image -->
+    <div class="text-center mb-3 rounded shadow-sm d-flex align-items-center justify-content-center"
+         style="height:200px;overflow: hidden;">
+        <img src="{{ event['image'] }}" alt="Event Image" id="event-image"
+             {% if editable %}
+             onclick="document.getElementById('event-image-input').click()"
+             style="cursor: pointer;"
+             {% endif %}
+             class="img-fluid shadow" style="object-fit:cover;"/>
+        <input type="file" id="event-image-input" class="d-none" accept="image/*" onchange="previewImage(event)">
+    </div>
+    <form class="row g-3 needs-validation"
+          action="{{ url_for('event.event_edit', event_id=event['event_id']) }}"
+          method="POST" novalidate>
+
+        <!-- Event Name -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="name" name="name" value="{{ event['name'] }}"
+                   placeholder="Event Name" required>
+            <label class="ms-2" for="name">Event Name</label>
+        </div>
+        <input type="hidden" name="image" value="{{ event['image'] }}">
+
+        <!-- Event Description -->
+        <div class="form-floating mb-3">
+            <textarea class="form-control" id="description" name="description" rows="5"
+                      placeholder="Event Description" required style="min-height:100px;">{{ event['description'] }}</textarea>
+            <label class="ms-2" for="description">Event Description</label>
+        </div>
+
+        <!-- Event Start Date -->
+        <div class="form-floating mb-3">
+            <input type="datetime-local" class="form-control" id="start_date" name="start_date"
+                   value="{{ event['start_date'] }}" placeholder="Event Start Date" required>
+            <label class="ms-2" for="start_date">Event Start Date</label>
+        </div>
+
+        <!-- Event End Date -->
+        <div class="form-floating mb-3">
+            <input type="datetime-local" class="form-control" id="end_date" name="end_date"
+                   value="{{ event['end_date'] }}" placeholder="Event End Date" required>
+            <label class="ms-2" for="end_date">Event End Date</label>
+        </div>
+
+        <!-- Event Status -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="status" name="status" value="{{ event['status'] }}" readonly>
+            <label for="status">Event Status</label>
+        </div>
+
+        <!--Button to Save Event-->
+        <div class="d-flex justify-content-center gap-2">
+            <button type="submit" class="btn btn-primary">Save</button>
+            {% if event.status == 'draft' %}
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#publishModal">Publish</button>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="publishModal" tabindex="-1" aria-labelledby="publishModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="publishModalLabel">Publish Event</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to publish this event?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmPublish" onclick="publishEvent({{event.event_id}})">Publish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function publishEvent(event_id) {
+        fetch(`{{ url_for('event.event_publish', event_id=event.event_id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+               showSuccessMessage(data.message);
+               goBack();
+            } else {
+                showErrorMessage(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+</script>
+{% endblock %}

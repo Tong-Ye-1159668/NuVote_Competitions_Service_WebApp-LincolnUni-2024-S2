@@ -1,0 +1,74 @@
+<div>
+
+    <div class="d-flex justify-content-end align-items-center my-3">
+        <a href="{{ url_for('user.profile', user_id=user.user_id) }}" class="btn btn-outline-primary">Edit</a>
+    </div>
+    <div class="list-group">
+        <div class="list-group-item"><strong class="me-2">Email:</strong> {{ user.email }}</div>
+        <div class="list-group-item"><strong class="me-2">First Name:</strong> {{ user.first_name }}</div>
+        <div class="list-group-item"><strong class="me-2">Last Name:</strong> {{ user.last_name }}</div>
+        <div class="list-group-item"><strong class="me-2">Location:</strong> <span id="location">{{ user.location
+                }}</span>
+            <div id="map" {% if user.latitude and user.longitude %} style="height: 400px;" {% else
+                %}style="display: none;" {% endif %}></div>
+
+            <!-- Hidden fields for latitude and longitude -->
+            <input type="hidden" id="latitude" name="latitude" value="{{ user.latitude }}">
+            <input type="hidden" id="longitude" name="longitude" value="{{ user.longitude }}">
+        </div>
+        <div class="list-group-item"><strong class="me-2">Role:</strong> {{ user.role }}</div>
+        <div class="list-group-item"><strong class="me-2">Status:</strong> {{ user.status }}</div>
+        <div class="list-group-item"><strong class="me-2">Description:</strong> {{ user.description }}</div>
+    </div>
+</div>
+<!-- load leaflet-geosearch  -->
+<script src="https://unpkg.com/leaflet-geosearch@latest/dist/bundle.min.js"></script>
+<!-- Leaflet CSS file -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- load leaflet-geosearch from a CDN  -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
+<!-- Leaflet JavaScript file -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize the map
+        var map = L.map('map').setView([-40.9006, 174.8860], 5); // Default to New Zealand
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Initialize marker variable
+        let marker;
+
+        // Function to add marker
+        function addMarker(lat, lng, label) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker([lat, lng]).addTo(map);
+            marker.bindPopup(`<b>${label}</b>`).openPopup();
+        }
+
+        // Check if there is an existing location
+        const latitude = document.getElementById('latitude').value;
+        const longitude = document.getElementById('longitude').value;
+        const locationNameElement = document.getElementById('location');
+        const locationName = locationNameElement ? locationNameElement.textContent.trim() : '';
+
+        if (latitude && longitude && latitude !== 'None' && longitude !== 'None') {
+            // Set the map view to the existing location
+            map.setView([latitude, longitude], 13);
+            addMarker(latitude, longitude, locationName);
+        } else {
+            // Set the map view to a default location (e.g., New Zealand)
+            map.setView([-40.9006, 174.8860], 5);
+        }
+
+    });
+</script>

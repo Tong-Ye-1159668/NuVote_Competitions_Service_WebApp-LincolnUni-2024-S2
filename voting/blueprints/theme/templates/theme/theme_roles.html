@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+
+{% block title %}Manage Theme Roles{% endblock %}
+
+{% block content %}
+
+
+{{ macros.back_button() }}
+
+<h1>Roles of {{ theme.theme_name }}</h1>
+<div class="d-flex justify-content-end gap-2">
+    {% if CURRENT_THEME_ROLE == 'tAdmin' %}
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addThemeRoleModal">Add Role</button>
+    {% endif %}
+</div>
+
+<table class="table table-striped mt-3">
+    <thead>
+        <tr>
+            <th class="text-center">User</th>
+            <th class="text-center">Role</th>
+            <th class="text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for role in theme_roles %}
+        <tr data-theme-role-id="{{ role.theme_role_id }}">
+            <td class="text-center align-middle">{{ role.user_name }}</td>
+            <td class="d-flex justify-content-center">
+                <select class="form-select" aria-label="Role" onchange="updateRole(this, '{{ role.theme_role_id }}')" style="width: 300px;" {% if CURRENT_THEME_ROLE != 'tAdmin' %}disabled{% endif %}>
+                {% if role.user_id == CURRENT_USER.user_id %}disabled{% endif %}>
+                    <option value="tAdmin" {% if role.role == 'tAdmin' %}selected{% endif %}>Theme Admin</option>
+                    <option value="tScrutineer" {% if role.role == 'tScrutineer' %}selected{% endif %}>Theme Scrutineer</option>
+                </select>
+            </td>
+            <td class="text-center">
+                <button class="btn btn-link text-danger text-decoration-none" onclick="confirmRemoveThemeRole('{{ role.theme_role_id }}')"
+                {% if role.user_id == CURRENT_USER.user_id or CURRENT_THEME_ROLE != 'tAdmin' %}disabled{% endif %}>Remove</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% include 'theme/components/add_theme_role_modal.html' %}
+{% include 'theme/components/delete_theme_role_modal.html' %}
+
+<script>
+    function updateRole(select, theme_role_id) {
+        const role = select.value;
+        fetch(`{{url_for('theme.update_role', theme_id=theme.theme_id, theme_role_id=0)}}${theme_role_id}`, {
+            method: 'POST',
+            body: JSON.stringify({ role }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSuccessMessage(data.message);
+                } else {
+                    showErrorMessage(data.message);
+                }
+            }).catch(error => {
+                showErrorMessage(error.message);
+            });
+    }
+</script>
+
+{% endblock %}

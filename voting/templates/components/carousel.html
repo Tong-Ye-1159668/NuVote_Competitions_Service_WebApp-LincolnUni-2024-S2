@@ -1,0 +1,47 @@
+<div id="event-carousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        {% for event in events if event.image %}
+        <button type="button" data-bs-target="#event-carousel" data-bs-slide-to="{{loop.index0}}" class="{% if loop.first %}active{% endif %}" aria-current="true" aria-label="event {{event.event_id}}"></button>
+        {% endfor %}
+    </div>
+    <div class="carousel-inner h-100">
+    {% for event in events if event.image %}
+    <div class="carousel-item h-100{% if loop.first %} active{% endif %}">
+        <a href="{{ url_for('event.event_result', event_id=event.event_id) if event.status == 'verified' else url_for('event.event_vote', event_id=event.event_id) }}">
+            <img src="{{event.image}}" class="d-block h-100 w-auto mx-auto" alt="{{event.name}}">
+        </a>
+        <div class="carousel-caption d-none d-md-block text-white">
+            <h5>{{event.name}}</h5>
+        </div>
+    </div>
+    {% endfor %}
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#event-carousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#event-carousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Next</span>
+    </button>
+</div>
+<style>
+    #event-carousel {
+        border-radius: 8px;
+        overflow: hidden;
+        background-color: #d8e9da;
+        height: 500px;
+    }
+
+    #event-carousel .carousel-item {
+        overflow: hidden;
+        position: relative;
+    }
+
+    #event-carousel .carousel-item img {
+        position: relative;     
+        left: 50%;              
+        transform: translateX(-50%);
+        max-width: none;
+    }
+</style>

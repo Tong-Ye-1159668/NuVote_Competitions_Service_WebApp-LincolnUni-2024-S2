@@ -1,0 +1,163 @@
+<div id="bansContainer" class="mt-3">
+    <table class="table ban-table">
+        <thead>
+            <tr>
+                <th class="text-center">Theme</th>
+                <th class="text-center">Banned At</th>
+                <th class="text-center">Banned By</th>
+                <th class="text-center">Banned Reason</th>
+                <th class="text-center">Status</th>
+                <th class="text-center">Revoked At</th>
+                <th class="text-center">Revoked By</th>
+                <th class="text-center">Appeals</th>
+                <th class="text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="bansTableBody">
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="appealModal" tabindex="-1" aria-labelledby="appealModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appealModalLabel">Submit Appeal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="appealForm" class="row g-3 needs-validation" novalidate>
+                    <input type="hidden" id="appealBanId" />
+                    <div class="mb-3">
+                        <label for="appealReason" class="form-label">Appeal Reason</label>
+                        <textarea class="form-control" id="appealReason" rows="3" name="appealed_reason" required></textarea>
+                        <div id="appealReasonError" class="invalid-feedback">Appeal reason is required!</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitAppealToServer()">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+let bansLoaded = false;
+document.addEventListener('bansTabClicked', function(event) {
+    const userId = event.detail.user_id;
+    loadBansData(userId);
+});
+
+async function loadBansData(userId){
+    data = await fetchData(`{{url_for('user.get_bans_of_user', user_id=0)}}`.replace('0', userId))
+    renderBans(data);
+    bansLoaded = true;
+}
+
+function renderBans(data) {
+    const container = document.getElementById('bansTableBody');
+    let html = ''; // Initialize HTML string
+
+    data.forEach(banned_user => {
+        const canAppeal = banned_user.revoked == 0 && (banned_user.appeal_count === 0 || banned_user.appeals.every(appeal => appeal.processed));
+        html += `
+            <tr ${banned_user.appeal_count>0 ? 'data-bs-toggle="collapse" data-bs-target="#appeals-'+banned_user.ban_id+'"': ''}>
+                <td class="text-center">${banned_user.theme_name || 'N/A'}</td>
+                <td class="text-center">${formatDateToNZTime(banned_user.banned_at)}</td>
+                <td class="text-center">${banned_user.banned_by_username}</td>
+                <td class="text-center">${banned_user.banned_reason}</td>
+                <td class="text-center">${banned_user.revoked == 1 ? '<div class="badge bg-success">Revoked</div>' : ''}</td>
+                <td class="text-center">${banned_user.revoked_at ? formatDateToNZTime(banned_user.revoked_at) : ''}</td>
+                <td class="text-center">${banned_user.revoked_by_username || ''}</td>
+                <td class="text-center">${banned_user.appeal_count>0 ? `<a href="#appeals-${banned_user.ban_id}" data-bs-toggle="collapse">${banned_user.appeal_count}</a>` : ''}</td>
+                <td class="text-center">
+                    ${canAppeal ? `<button class="btn btn-link text-primary text-decoration-none" onclick="showAppealModal(${banned_user.ban_id})">Appeal</button>` : ''}
+                </td>
+            </tr>
+        `;
+        if (banned_user.appeal_count > 0) {
+            html += `
+            <tr>
+                <td colspan="9" class="hiddenRow p-0">
+                    <div class="collapse" id="appeals-${banned_user.ban_id}">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Appeal At</th>
+                                    <th class="text-center">Appeal Reason</th>
+                                    <th class="text-center">Processed At</th>
+                                    <th class="text-center">Processed By</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${banned_user.appeals.map(appeal => `
+                                    <tr>
+                                        <td class="text-center">${formatDateToNZTime(appeal.appealed_at)}</td>
+                                        <td class="text-center">${appeal.appealed_reason}</td>
+                                        <td class="text-center">${appeal.processed_at ? formatDateToNZTime(appeal.processed_at) : ''}</td>
+                                        <td class="text-center">${appeal.processed_by_username || ''}</td>
+                                        <td class="text-center">${appeal.accepted == null ? '' : (appeal.accepted == 1 ? 'Accepted' : 'Rejected')}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }
+    });
+
+    if (html === '') {
+        html = `<tr><td colspan="9" class="text-center text-muted">You have not been banned from any themes</td></tr>`;
+    }
+
+    container.innerHTML = html; // Insert the generated HTML into the container
+}
+
+function showAppealModal(ban_id) {
+    // Set the hidden field value for ban_id
+    document.getElementById('appealBanId').value = ban_id;
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('appealModal'));
+    modal.show();
+}
+
+function submitAppealToServer() {
+    const form = document.getElementById('appealForm'); 
+    if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+    }
+    const ban_id = document.getElementById('appealBanId').value;
+    const formData = new FormData(form);
+
+    fetch(`{{ url_for('user.submit_appeal', ban_id=0) }}`.replace('0', ban_id), {
+        method: 'POST',
+        body: formData,
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showSuccessMessage(data.message);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('appealModal'));
+            modal.hide();
+            window.location.reload();
+        } else {
+            showErrorMessage(data.message);
+        }
+    }).catch(error => {
+        showErrorMessage('An error occurred while submitting the appeal!')
+        console.error('Error:', error);
+    });
+
+}
+</script>
+<style>
+    .ban-table tbody tr td {
+        vertical-align: middle;
+    }
+</style>

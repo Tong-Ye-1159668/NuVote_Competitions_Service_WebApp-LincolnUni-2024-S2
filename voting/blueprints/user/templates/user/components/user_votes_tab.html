@@ -1,0 +1,43 @@
+<div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Vote Time</th>
+                <th>Event</th>
+                <th>Candidate</th>
+                <th>Theme</th>
+                <th>Vote Ip</th>
+            </tr>
+        </thead>
+        <tbody id="recentVotesBody">
+            <!-- Recent votes will be populated here -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('votesTabClicked', function(event) {
+        const userId = event.detail.user_id;
+        fetchRecentVotes(userId);
+    });
+
+     async function fetchRecentVotes(userId) {
+        const votes = await fetchData(`{{url_for('user.recent_votes', user_id=0)}}`.replace('0', userId));
+        renderVotes(votes);
+    }
+
+    function renderVotes(votes) {
+        const tbody = document.getElementById('recentVotesBody');
+        let html = ''; // Clear existing rows
+        votes.forEach(vote => {
+            html+= `<tr>
+                <td>${formatDateToNZTime(vote.voted_at)}</td>
+                <td><a href="{{url_for('event.event_view', event_id=0)}}${vote.event_id}"}>${vote.event_name}</a></td>
+                <td>${vote.candidate_name}</td>
+                <td>${vote.theme_name}</td>
+                <td>${vote.voted_ip}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+</script>

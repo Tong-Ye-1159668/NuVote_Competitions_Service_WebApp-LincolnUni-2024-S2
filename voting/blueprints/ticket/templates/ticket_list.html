@@ -1,0 +1,92 @@
+{% extends 'layout.html' %}
+
+{% block title %}Ticket List{% endblock %}
+
+{% block content %}
+
+<!-- Back button -->
+{{ macros.back_button() }}
+
+<!-- Ticket display -->
+<h1 class="text-center"><span style="color: #495057; font-family: 'Arial Black', Arial;">Tickets</span></h1>
+<br>
+
+<div class="row">
+    {% for ticket in tickets %}
+    <div class="col-md-4 mb-3">
+        <div class="card border-0 shadow-lg rounded ticket-card">
+            <div class="card-body">
+                <div class="title-container">
+                    {% if ticket.status == 'new' %}
+                    <span class="badge bg-primary status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                    {% elif ticket.status == 'open' %}
+                    <span class="badge bg-info status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                    {% elif ticket.status == 'closed' %}
+                    <span class="badge bg-success status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                    {% endif %}
+                    <p class="font-monospace fw-bold">{{ ticket.subject }}</p>
+                </div>
+                <p class="card-text ticket-content text-truncate">{{ ticket.content }}</p>
+                <div class="text-end">
+                    <p class="card-text ticket-date">Created at: {{ ticket.created_at | utc_2_nzst_datetime_format }}</p>
+                    <p class="card-text ticket-date">Assigned to: {{ ticket.assign_to_username }}</p>
+                </div>
+                <a href="{{ url_for('ticket.ticket_by_id', ticket_id=ticket.ticket_id) }}"
+                   class="btn btn-outline-primary"
+                   role="button">Details</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .title-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .status-badge {
+        margin-right: 1rem;
+    }
+
+    .ticket-content {
+        min-height: 60px; /* Keeps space for content */
+    }
+
+    .ticket-card {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .ticket-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-success {
+        background-color: #28a745; /* Primary green */
+        border: none;
+    }
+
+    .btn-success:hover {
+        background-color: #218838; /* Darker green */
+        transform: translateY(-2px); /* Slight lift effect */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-lg {
+        padding: 0.75rem 1.5rem; /* Larger padding */
+        font-size: 1.25rem; /* Larger font size */
+    }
+</style>
+{% endblock %}

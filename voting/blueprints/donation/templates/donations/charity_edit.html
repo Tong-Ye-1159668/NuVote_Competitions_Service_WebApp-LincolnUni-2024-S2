@@ -1,0 +1,126 @@
+{% extends 'layout.html' %}
+
+{% block title %}Edit Charity{% endblock %}
+
+{% block content %}
+    <div>
+        <!-- Back Button -->
+        {{ macros.back_button() }}
+
+        <!-- Charity Image -->
+        <div class="charity-banner mb-4">
+            <img src="{{ charity['charity_image'] }}" alt="Charity Banner" class="img-fluid fixed-height">
+        </div>
+
+        <!-- Charity Edit Form -->
+        <form class="row g-3 needs-validation"
+              action="{{ url_for('donation.charity_edit', charity_id=charity['charity_id'], theme_id=charity['theme_id']) }}"
+              method="POST" novalidate>
+
+            <!-- Charity Name -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="charity_name" name="charity_name"
+                       value="{{ charity['charity_name'] }}"
+                       placeholder="Charity Name" required>
+                <label class="ms-2" for="charity_name">Charity Name</label>
+            </div>
+            <input type="hidden" name="charity_image" value="{{ charity['charity_image'] }}">
+
+            <!-- Charity Description -->
+            <div class="form-floating mb-3">
+            <textarea class="form-control" id="charity_description" name="charity_description" rows="5"
+                      placeholder="Charity Description" required
+                      style="min-height:100px;">{{ charity['charity_description'] }}</textarea>
+                <label class="ms-2" for="charity_description">Charity Description</label>
+            </div>
+
+            <!-- Charity Services Registration Number -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="reg_num" name="reg_num" value="{{ charity['reg_num'] }}"
+                       placeholder="Charity Services Registration Number" required>
+                <label class="ms-2" for="reg_num">Charity Services Registration Number</label>
+            </div>
+
+            <!-- Charity Bank Account Number -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="bank_acc" name="bank_acc" value="{{ charity['bank_acc'] }}"
+                       placeholder="Charity Bank Account Number" required>
+                <label class="ms-2" for="bank_acc">Charity Bank Account Number</label>
+            </div>
+
+            <!-- Charity IRD Number -->
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="ird_num" name="ird_num" value="{{ charity['ird_num'] }}"
+                       placeholder="Charity IRD Number" required>
+                <label class="ms-2" for="ird_num">Charity IRD Number</label>
+            </div>
+
+            <!--Button to Save Event-->
+            <div class="d-flex justify-content-center gap-2">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        .fixed-height {
+            height: 200px;
+            width: auto;
+            object-fit: cover;
+        }
+    </style>
+
+    <script>
+        // Bootstrap validation trigger and formatting scripts
+        (function () {
+            'use strict';
+            var forms = document.querySelectorAll('.needs-validation');
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        })();
+
+        // Auto-format bank account number as xx-xxxx-xxxxxxx-xx or xx-xxxx-xxxxxxx-xxx
+        document.getElementById('bank_acc').addEventListener('input', function (e) {
+            let input = e.target.value.replace(/\D/g, '');  // Remove non-digit characters
+            let formatted = '';
+
+            if (input.length <= 2) {
+                formatted = input;
+            } else if (input.length <= 6) {
+                formatted = input.slice(0, 2) + '-' + input.slice(2);
+            } else if (input.length <= 13) {
+                formatted = input.slice(0, 2) + '-' + input.slice(2, 6) + '-' + input.slice(6);
+            } else if (input.length <= 15) {
+                formatted = input.slice(0, 2) + '-' + input.slice(2, 6) + '-' + input.slice(6, 13) + '-' + input.slice(13);
+            } else {
+                formatted = input.slice(0, 2) + '-' + input.slice(2, 6) + '-' + input.slice(6, 13) + '-' + input.slice(13, 16);
+            }
+
+            e.target.value = formatted;
+        });
+
+        // Auto-format IRD number as xxx-xxx-xxx
+        document.getElementById('ird_num').addEventListener('input', function (e) {
+            let input = e.target.value.replace(/\D/g, '');  // Remove non-digit characters
+            let formatted = '';
+
+            if (input.length <= 3) {
+                formatted = input;
+            } else if (input.length <= 6) {
+                formatted = input.slice(0, 3) + '-' + input.slice(3);
+            } else {
+                formatted = input.slice(0, 3) + '-' + input.slice(3, 6) + '-' + input.slice(6, 9);
+            }
+
+            e.target.value = formatted;
+        });
+    </script>
+
+{% endblock %}

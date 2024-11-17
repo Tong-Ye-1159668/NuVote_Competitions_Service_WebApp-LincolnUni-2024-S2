@@ -1,0 +1,104 @@
+{% extends 'layout.html' %}
+
+{% block title %}Ticket Management{% endblock %}
+
+{% block content %}
+
+<h1 class="text-center mb-4" style="color: #495057; font-family: 'Arial Black', Arial;">Ticket Management</h1>
+
+<div class="container">
+    <div class="row">
+        <!-- New Tickets Column -->
+        <div class="col-md-4">
+            <h4 class="text-center mb-3">
+                <span class="badge bg-primary status-badge" data-bs-toggle="tooltip" data-bs-placement="top" title="New">New</span>
+                New Tickets
+            </h4>
+            {% for ticket in new_tickets %}
+            <div class="card mb-3 border-0 shadow-sm rounded">
+                <div class="card-body">
+                    <h5 class="card-title">{{ ticket.subject }}</h5>
+                    <p class="card-text truncated">{{ ticket.content }}</p>
+                    <p class="card-text text-muted text-end">
+                        <small>Assigned to: {{ ticket.assign_to_username }}</small>
+                    </p>
+                    <p class="card-text text-muted text-end">
+                        <small>Created by: {{ ticket.created_by_username }} at {{ ticket.created_at | utc_2_nzst_datetime_format }}</small>
+                    </p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('ticket.ticket_by_id', ticket_id=ticket.ticket_id) }}" class="btn btn-outline-primary">Details</a>
+                        <a href="{{ url_for('ticket.ticket_update_by_id', ticket_id=ticket.ticket_id) }}" class="btn btn-outline-secondary">Edit</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- WIP Tickets Column -->
+        <div class="col-md-4">
+            <h4 class="text-center mb-3">
+                <span class="badge bg-info status-badge" data-bs-toggle="tooltip" data-bs-placement="top" title="Open">Open</span>
+                WIP Tickets
+            </h4>
+            {% for ticket in wip_tickets %}
+            <div class="card mb-3 border-0 shadow-sm rounded">
+                <div class="card-body">
+                    <h5 class="card-title">{{ ticket.subject }}</h5>
+                    <p class="card-text truncated">{{ ticket.content }}</p>
+                    <p class="card-text text-muted text-end">
+                        <small>Assigned to: {{ ticket.assign_to_username }}</small>
+                    </p>
+                    <p class="card-text text-muted text-end">
+                        <small>Updated by: {{ ticket.updated_by_username }} at {{ ticket.updated_at | datetime_format }}</small>
+                    </p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('ticket.ticket_by_id', ticket_id=ticket.ticket_id) }}" class="btn btn-outline-info">Details</a>
+                        <a href="{{ url_for('ticket.ticket_update_by_id', ticket_id=ticket.ticket_id) }}" class="btn btn-outline-secondary">Edit</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Done Tickets Column -->
+        <div class="col-md-4">
+            <h4 class="text-center mb-3">
+                <span class="badge bg-success status-badge" data-bs-toggle="tooltip" data-bs-placement="top" title="Closed">Closed</span>
+                Done Tickets
+            </h4>
+            {% for ticket in done_tickets %}
+            <div class="card mb-3 border-0 shadow-sm rounded">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-0">
+                        <h5 class="card-title">{{ ticket.subject }}</h5>
+                        <span class="badge bg-success-subtle status-badge" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ ticket.solution }}">{{ ticket.solution }}</span>
+                    </div>
+                    <p class="card-text truncated">{{ ticket.content }}</p>
+                    <p class="card-text text-muted text-end">
+                        <small>Assigned to: {{ ticket.assign_to_username }}</small>
+                    </p>
+                    <p class="card-text text-muted text-end">
+                        <small>Completed by: {{ ticket.updated_by_username }} at {{ ticket.updated_at | datetime_format }}</small>
+                    </p>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('ticket.ticket_by_id', ticket_id=ticket.ticket_id) }}" class="btn btn-outline-success">Details</a>
+                        <a href="{{ url_for('ticket.ticket_update_by_id', ticket_id=ticket.ticket_id) }}" class="btn btn-outline-secondary">Edit</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-title {
+        font-weight: bold;
+        font-size: 1.25rem;
+    }
+    .status-badge {
+        font-size: 1.0rem;
+    }
+</style>
+
+{% endblock %}

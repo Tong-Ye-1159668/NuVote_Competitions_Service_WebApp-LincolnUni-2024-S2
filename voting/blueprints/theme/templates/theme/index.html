@@ -1,0 +1,33 @@
+{% extends 'layout.html' %}
+
+{% block title %}All Themes{% endblock %}
+
+{% block content %}
+<div>
+    <h1>Themes</h1>
+    {% if IS_LOGGED_IN %}
+    <div class="d-flex justify-content-end gap-2 mb-2">
+      {% if themes | length > 0 %}
+      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createThemeModal">Propose a theme</button>
+      {% endif %}
+      <a href="{{ url_for('theme.my_proposals') }}" class="btn btn-outline-success">My Proposals</a>
+    </div>
+    {% endif %}
+    <div class="d-flex flex-column gap-2">
+      {% from 'theme/components/macros.html' import theme_card %}
+        {% for theme in themes %}
+          {{ theme_card(theme, CURRENT_USER, showBackground=True) }}
+        {% endfor %}
+      </div>
+      {% if themes | length == 0 %}
+      <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
+        <p class="text-muted">No themes yet. Be the first to propose a theme!</p>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createThemeModal">Propose a theme</button>
+      </div>
+      {% endif %}
+</div>
+
+{% include 'theme/components/create_theme_modal.html' %}
+
+{% endblock %}
+

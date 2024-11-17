@@ -1,0 +1,134 @@
+<div class="modal fade" id="banUserModal" tabindex="-1" aria-labelledby="banUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="banUserModalLabel">Ban User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="banUserForm" class="row g-3 needs-validation" novalidate>
+                    <input type="hidden" id="theme_id" name="theme_id">
+                    <div class="mb-3 userInputContainer">
+                    </div>
+                    <div class="mb-3">
+                        <label for="banReason" class="form-label">Ban Reason</label>
+                        <textarea class="form-control" id="banReason" rows="3" name="banned_reason" required></textarea>
+                        <div id="banReasonError" class="invalid-feedback">Ban reason is required!</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger" onclick="banUser()">Ban User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const showBanUserModal = (themeId, userId, username) => {
+        if(userId){
+            document.getElementsByClassName('userInputContainer')[0].innerHTML = `
+            <input type="hidden" id="user_id" name="user_id" value="${userId}">
+            `
+            document.getElementById('banUserModalLabel').innerText = `Ban User: ${username}`;
+        }
+        document.getElementById('theme_id').value = themeId;
+        // document.getElementById('user_id').value = userId;
+        const modal = new bootstrap.Modal(document.getElementById('banUserModal'));
+        modal.show();
+    }
+
+    const handleCheckUserBanned = async (theme_id, user_id) => {
+        const isBanned = await checkUserBanned(user_id, theme_id);
+        const userBannedFeedback = document.getElementsByClassName('userBannedFeedback')[0];
+        if(isBanned){
+            userBannedFeedback.style.display = 'block';
+        } else {
+            userBannedFeedback.style.display = 'none';
+        }
+    }
+
+    const checkUserBanned = async (user_id, theme_id) => {
+        const url = `{{ url_for('user.is_user_banned', user_id=0) }}`.replace('0', user_id)+`?theme_id=${theme_id}`;
+        return await fetchData(url);
+    }
+
+    // Invoke from event vote page, for theme admin or theme scrutineer
+    banUserFromEvent = async (event_id, user_id, username) => {
+        const theme = await fetchData(`{{url_for('event.get_theme_by_event_id', event_id=0)}}`.replace('0', event_id));
+        if (!theme) return;
+        const isBanned = await checkUserBanned(user_id, theme.theme_id);
+        if (isBanned === null) return;
+
+        if (isBanned) {
+            showErrorMessage('User is already banned from this event!');
+            return;
+        }
+
+        showBanUserModal(theme.theme_id, user_id, username);
+    }
+
+    // Invoke from user manage page, for role site admin
+    banUserSiteWide = async (user_id, username) => {
+        const isBanned = await checkUserBanned(user_id, 0);
+        if (isBanned === null) return;
+
+        if (isBanned) {
+            showErrorMessage('User is already banned site wide!');
+            return;
+        }
+
+        showBanUserModal(0, user_id, username);
+    }
+
+    // Invoke form banned user manage page without user_id, for role site admin
+    selectAndBanUser = async (theme_id) => {
+        users = await fetchData(`{{url_for('user.search_users')}}`);
+        if(users.length === 0){
+            showErrorMessage("No users found!")
+            return;
+        }
+        console.log(users);
+        document.getElementsByClassName('userInputContainer')[0].innerHTML = `
+        <select class="form-select" id="userSelect" name="user_id" onchange="handleCheckUserBanned(${theme_id}, this.value)">
+            <option value="">Select User</option>
+            ${users.map(user => `<option value="${user.user_id}">${user.username}</option>`).join('')}
+        </select>
+        <div class="invalid-feedback userBannedFeedback">
+            User already be banned!
+        </div>
+        `
+        showBanUserModal(theme_id, null, null);
+    }
+
+    // Execute ban user
+    banUser = () => {
+        const form = document.getElementById('banUserForm');
+        const formData = new FormData(form);
+        const url = "{{url_for('user.ban_user')}}";
+        //verify required fields
+        if(!formData.get('banned_reason')){
+            document.getElementById('banReason').classList.add('is-invalid');
+            return;
+        } else {
+            document.getElementById('banReason').classList.remove('is-invalid');
+        }
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+        }).then(response => response.json())
+        .then(data => {
+            if(data.success){
+                showSuccessMessage('User banned successfully!')
+                const modal = bootstrap.Modal.getInstance(document.getElementById('banUserModal'));
+                modal.hide();
+            }else{
+                showErrorMessage(data.message)
+            }
+        }).catch(error => {
+            showErrorMessage('An error occurred while banning the user!')
+            console.error('Error:', error);
+        });
+    }
+</script>

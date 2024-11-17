@@ -1,0 +1,87 @@
+<div class="mt-3">
+    <ul class="list-unstyled">
+        {% for ticket in tickets %}
+        <li class="mb-3">
+            <div class="row border rounded shadow-sm p-4 ticket-row bg-light">
+                <div class="col-md-10">
+                    <div class="title-container mb-2">
+                        {% if ticket.status == 'new' %}
+                        <span class="badge bg-primary status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                        {% elif ticket.status == 'open' %}
+                        <span class="badge bg-info status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                        {% elif ticket.status == 'closed' %}
+                        <span class="badge bg-success status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                        {% endif %}
+                        <h5 class="font-monospace fw-bold">{{ ticket.subject }}</h5>
+                    </div>
+                    <p class="ticket-content">{{ ticket.content }}</p>
+                    <div class="text-muted">
+                        <p class="ticket-date">Created at: <strong>{{ ticket.created_at | utc_2_nzst_datetime_format }}</strong></p>
+                        <p class="ticket-date">Assigned to: <strong>{{ ticket.assign_to_username }}</strong></p>
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    {% if ticket.status == 'closed' %}
+                    <span class="badge bg-secondary status-badge me-0" data-bs-toggle="tooltip" data-bs-placement="top"
+                          title="{{ ticket.solution }}">
+                        {{ ticket.solution }}
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="text-end me-3">
+                <a href="{{ url_for('ticket.ticket_by_id', ticket_id=ticket.ticket_id) }}"
+                   class="btn btn-outline-primary"
+                   role="button">Details</a>
+            </div>
+            </div>
+
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<style>
+    .title-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .status-badge {
+        margin-right: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .ticket-content {
+        min-height: 60px; /* Keeps space for content */
+        font-size: 1rem;
+        color: #343a40; /* Darker text for better readability */
+    }
+
+    .ticket-row {
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .ticket-row:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Additional styles for list */
+    ul {
+        padding-left: 0; /* Removes default list padding */
+    }
+
+    /* Background for ticket rows */
+    .bg-light {
+        background-color: #f8f9fa; /* Light background for contrast */
+    }
+</style>

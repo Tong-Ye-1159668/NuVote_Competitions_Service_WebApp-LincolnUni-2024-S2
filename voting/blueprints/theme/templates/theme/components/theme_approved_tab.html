@@ -1,0 +1,14 @@
+<div class="d-flex flex-column gap-2">
+  {% from 'theme/components/macros.html' import theme_card %}
+  {% for theme in approved %}
+    {{ theme_card(theme, CURRENT_USER, showApproveResult=True) }}
+    {% endfor %}
+    {% if approved | length == 0 %}
+    <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
+      <p class="text-muted">No themes have been approved yet.</p>
+    </div>
+    {% endif %}
+</div>
+<script>
+  
+</script>

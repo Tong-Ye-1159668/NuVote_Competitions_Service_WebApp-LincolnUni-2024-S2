@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+
+{% block title %}Announcement List{% endblock %}
+
+{% block content %}
+
+<!-- Back button -->
+{{ macros.back_button() }}
+
+<!-- Announcement display -->
+<h1 class="text-center"><span style="color: #495057; font-family: 'Arial Black', Arial;">Announcements</span></h1>
+<br>
+
+{% for announcement in announcements %}
+<div class="announcement rounded shadow-sm position-relative mb-2" data-announcement-id="{{announcement.announcement_id}}">
+    <div class="card border-1 shadow-sm">
+        <div class="card-body position-relative">
+            <h5 class="card-title"><b>{{ announcement.title }}</b></h5>
+            <p class="card-text announcement-content">{{ announcement.content }}</p>
+            <p class="card-text announcement-content text-muted">Announced at: {{ announcement.created_at | utc_2_nzst_datetime_format }} - End at: {{ announcement.end_at | datetime_format}}</p>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

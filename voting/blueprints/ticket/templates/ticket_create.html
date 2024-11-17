@@ -1,0 +1,39 @@
+{% extends 'layout.html' %}
+
+{% block title %}Create Ticket{% endblock %}
+
+{% block content %}
+
+{{ macros.back_button() }}
+
+<h2 class="text-center mb-4">{{ 'Report a suspicious vote' if form is defined and form.content else 'Create Ticket'
+    }}</h2>
+
+<!--Display subject and content input fields-->
+<form class="row g-3 needs-validation"
+      action="{{ url_for('ticket.ticket_create') }}"
+      method="POST" novalidate>
+
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="subject" name="subject" placeholder="Subject"
+               value="{{ form.subject if form is defined and form.subject else '' }}" required>
+        <label class="ms-2" for="subject">Subject</label>
+        <div class="invalid-feedback">Subject is required</div>
+    </div>
+
+    <div class="form-floating mb-3">
+        <textarea type="text" class="form-control" id="content" name="content"
+                  placeholder="content" required style="height: 100px;">{{ form.content if form is defined and form.content else '' }}</textarea>
+        <label class="ms-2" for="content">Content</label>
+        <div class="invalid-feedback">Content is required</div>
+    </div>
+
+    <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+        {% if form is defined %}
+        <button type="submit" class="btn btn-warning">Report</button>
+        {% else %}
+        <button type="submit" class="btn btn-success">Submit</button>
+        {% endif %}
+    </div>
+</form>
+{% endblock %}

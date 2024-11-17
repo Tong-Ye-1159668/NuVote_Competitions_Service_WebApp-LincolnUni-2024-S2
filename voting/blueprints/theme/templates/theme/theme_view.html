@@ -1,0 +1,36 @@
+{% extends 'layout.html' %}
+
+{% block title %}Theme: {{ theme.theme_name }}{% endblock %}
+
+{% block content %}
+    <div>
+        <!-- Back Button -->
+        {{ macros.back_button() }}
+
+        <h1>{{ theme.theme_name }}</h1>
+        <div class="text-muted">
+            <span>Proposed by {{ theme.created_by_username }} on {{ theme.created_at | utc_2_nzst_datetime_format }}</span>
+        </div>
+        <p class="text-break">{{ theme.theme_description }}</p>
+
+        {% from 'events/components/macros.html' import event_card %}
+        <div class="d-flex flex-column gap-2 custom-gap">
+            {% for event in events %}
+                {{ event_card(event, CURR_TIME) }}
+            {% endfor %}
+        </div>
+
+        {% from 'donations/components/macros.html' import charity_card %}
+        <div class="d-flex flex-column gap-2 custom-gap">
+            {% for charity in charities %}
+                {{ charity_card(charity, CURR_TIME) }}
+            {% endfor %}
+        </div>
+
+    </div>
+    <style>
+        .custom-gap {
+            margin-bottom: 10px; /* Adjust the value to set the desired gap */
+        }
+    </style>
+{% endblock %}

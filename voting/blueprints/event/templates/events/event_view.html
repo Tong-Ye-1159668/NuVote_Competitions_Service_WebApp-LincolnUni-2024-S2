@@ -1,0 +1,77 @@
+{% extends 'layout.html' %}
+
+{% block title %}View Event{% endblock %}
+
+{% block content %}
+
+
+<div class="">
+
+    <!-- Back Button -->
+    {{ macros.back_button() }}
+
+    <!-- Banner Image -->
+    <div class="mb-4">
+        <div class="event-banner">
+            <img src="{{ event['image'] }}" alt="Event Banner" class="img-fluid rounded">
+        </div>
+    </div>
+
+    <!-- Event Title and Status -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="title-container">
+                <h1 class="display-5">{{ event['name'] }}</h1>
+                <span class="badge bg-primary status-badge" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ status_message }}">
+                    {{ status }}
+                </span>
+            </div>
+            <p class="text-muted">
+                {{ event['start_date'] | datetime_format }} - {{ event['end_date'] | datetime_format }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Other Event Details or Description -->
+    <div class="row">
+        <div class="col-12">
+            <p class="lead description text-break">{{ event['description'] }}</p>
+        </div>
+    </div>
+
+</div>
+
+<style>
+.event-banner {
+    height: 200px;
+    overflow: hidden;
+}
+.event-banner img {
+    object-fit: cover;
+    height: 100%;
+    width: 100%;
+}
+.description {
+    white-space: pre-wrap; /* Preserve line breaks and spaces */
+    min-height: 200px;
+}
+.title-container {
+    display: flex;
+    align-items: baseline;
+    justify-content: start;
+}
+.status-badge {
+    margin-left: 1rem;
+}
+</style>
+<script>
+    // Initialize Bootstrap tooltips
+    document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        });
+</script>
+
+{% endblock %}

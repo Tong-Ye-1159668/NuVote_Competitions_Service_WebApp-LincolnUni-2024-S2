@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+
+{% block title %}My Notifications{% endblock %}
+
+{% block content %}
+
+<h1>My Notifications</h1>
+<div class="d-flex justify-content-end gap-2 mb-3">
+    <div class="form-check form-switch d-flex align-items-center">
+        <input class="form-check-input me-2 cursor-pointer" type="checkbox" role="switch" id="unread" onchange="reloadNotifications()">
+        <label class="form-check-label cursor-pointer" for="unread">Show all messages</label>
+    </div>
+    <button class="btn btn-outline-primary" onclick="markAllAsRead()">Mark all as read</button>
+</div>
+
+<div class="d-flex flex-column gap-2" id="notifications">
+
+</div>
+
+<!-- Add the modal structure -->
+<div class="modal" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to mark all notifications as read?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmMarkAsRead">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAllAsRead(){
+    // Show the confirmation modal
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    confirmModal.show();
+
+    // Add event listener for the confirm button
+    document.getElementById('confirmMarkAsRead').onclick = function() {
+        fetch("{{ url_for('notification.mark_all_as_read') }}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        }).then(response => response.json())
+        .then(data => {
+            if(data.success){
+                reloadNotifications();
+            }else{
+                showErrorMessage(data.message);
+            }
+        });
+        confirmModal.hide(); // Hide the modal after confirmation
+    }
+}
+
+function reloadNotifications() {
+    const unread = !document.getElementById('unread').checked;
+    const url = unread ? "{{ url_for('notification.get_unread_notifications') }}" : "{{ url_for('notification.get_all_notifications') }}";
+
+    fetch(url, {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'}
+    }).then(response => response.json())
+    .then(data => {
+        if(data.success){
+            renderNotifications(data.data);
+        }else{
+            showErrorMessage(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching notifications:', error);
+        showErrorMessage('Failed to load notifications');
+    });
+}
+
+function renderNotifications(notifications){
+    const notificationsDiv = document.getElementById('notifications');
+    let html = '';
+    notifications.forEach(notification => {
+        html += `
+        <div class="card">
+            <div class="card-body ${notification.has_read == 0 ? 'bg-light' : ''}">
+                <p class="card-text text-muted">${formatDateToNZTime(notification.created_at)}</p>
+                <p class="card-text">${notification.content}</p>
+            </div>
+            <a class="stretched-link" style="cursor: pointer;"
+            ${notification.has_read == 0 ? `onclick="markAsReadAndRedirect('${notification.notification_id}', '${notification.url}')"` : `href="${notification.url}"`}
+            ></a>
+        </div>
+        `;
+    });
+    if(html == ''){
+        html = '<dic class="d-flex justify-content-center p-5 text-muted">No notifications</p>';
+    }
+    notificationsDiv.innerHTML = html;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    reloadNotifications();
+});
+
+</script>
+{% endblock %}

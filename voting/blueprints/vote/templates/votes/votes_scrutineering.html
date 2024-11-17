@@ -1,0 +1,244 @@
+{% extends 'layout.html' %} 
+
+{% block title %}Event Scrutineering{% endblock %} 
+
+{% block content %}
+
+<div>
+  <!--Back button-->
+  {{ macros.back_button() }}
+
+  <!--Event name and status-->
+  <div class="mb-3 d-flex justify-conent-start align-items-baseline">
+    <h1>{{event.name}}</h1>
+    <span class="badge bg-primary status-badge ms-2">
+      {{ event.status }}
+    </span>
+  </div>
+
+  <!--Votes by date chart-->
+  <canvas id="dailyVotesChart" style="width:100%;height:500px;" ></canvas>
+
+  <!--Valid Votes by candidate chart-->
+  <canvas class="mt-4" id="candidatesLineChart" style="width: 100%; height: 500px;"></canvas>
+
+  <div class="mt-4">
+    <h2>Votes by Ip</h2>
+  </div>
+
+  <!--Votes by IP table-->
+  <table class="table table-hover table-striped thead-light ip-table">
+    <thead>
+      <tr>
+        <th scope="col">IP Address</th>
+        <th scope="col">Distinct Candidates</th>
+        <th scope="col">Total Votes</th>
+        <th scope="col">Valid Votes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for vote in votes %}
+      <tr data-ip="{{vote.voted_ip}}">
+        <td>
+          <a href="{{ url_for('event.votes_list', event_id=event.event_id) }}?ip={{ vote.voted_ip }}"
+           >{{ vote.voted_ip }}</a`
+          >
+        </td>
+        <td>{{ vote.distinct_candidates }}</td>
+        <td>{{ vote.total_votes }}</td>
+        <td>{{ vote.valid_votes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .table thead th,
+  .table tbody td {
+    text-align: center;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", generateDailyVotesChart);
+  document.addEventListener("DOMContentLoaded", generateCandidatesVotesChart);
+
+  // Generate the Votes by date chart
+  function generateDailyVotesChart() {
+    fetch('{{ url_for("event.daily_votes", event_id=event.event_id) }}')
+      .then(response => response.json())
+      .then(data => {
+          if (data.success) {
+              const dailyVotes = data.data;
+              
+              const labels = dailyVotes.map(vote => vote.vote_date);
+              const validVotes = dailyVotes.map(vote => vote.valid_votes);
+              const invalidVotes = dailyVotes.map(vote => vote.invalid_votes);
+
+              const ctx = document.getElementById('dailyVotesChart').getContext('2d');
+              new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                      labels: labels,
+                      datasets: [{
+                          label: 'Valid Votes',
+                          data: validVotes,
+                          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                          borderColor: 'rgba(75, 192, 192, 1)',
+                          borderWidth: 1
+                      }, {
+                          label: 'Invalid Votes',
+                          data: invalidVotes,
+                          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                          borderColor: 'rgba(255, 99, 132, 1)',
+                          borderWidth: 1
+                      }]
+                  },
+                  options: {
+                      responsive: true,
+                      scales: {
+                          x: {
+                              stacked: true,
+                              title: {
+                                display: false,
+                                text: 'Date'
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            }
+                          },
+                          y: {
+                              stacked: true,
+                              beginAtZero: true,
+                              title: {
+                                display: true,
+                                text: 'Incremental Votes'
+                            }
+                          }
+                      },
+                      plugins: {
+                          title: {
+                              display: true,
+                              text: 'Votes by Date',
+                              font: {
+                                  size: 24
+                              }
+                          }
+                      } 
+                  }
+              });
+          } else {
+              showErrorMessage(data.message);
+          }
+      })
+      .catch(error => {
+        showErrorMessage('Error fetching data:', error);
+        console.error(error);
+      });
+    }
+
+    // Generate the Valid Votes by candidate chart
+    function generateCandidatesVotesChart() {
+      fetch('{{ url_for("event.daily_votes_of_candidates", event_id=event.event_id) }}')
+        .then(response => response.json())
+        .then(data => {
+            const labels = data[0].cumulative_votes.map(vote => vote.date);
+            const numCandidates = Math.max(data.length, 8);
+            const colors = generateColorScheme(numCandidates); // Generate a color scheme
+
+            const datasets = data.map((candidate,index) => ({
+                label: candidate.candidate_name,
+                data: candidate.cumulative_votes.map(vote => vote.cumulative_votes),
+                fill: false,
+                pointRadius: 1,
+                borderWidth: 1,
+                borderColor: colors[index],
+                backgroundColor: colors[index],
+                tension: 0.1
+            }));
+
+            const ctx = document.getElementById('candidatesLineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Valid Votes By Candidate',
+                            font: {
+                                size: 24
+                            }
+                        },
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: false,
+                                text: 'Date'
+                            },
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Cumulative Votes'
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000, // Duration of the animation in milliseconds
+                        easing: 'easeInOutQuad' // Easing function for the animation
+                    }
+                }
+            });
+        })
+        .catch(error => {
+            showErrorMessage('Error fetching data:', error);
+            console.error(error);
+        });
+    }
+
+    function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    function generateColorScheme(numColors) {
+      const colors = [];
+      const saturation = 70; // Saturation percentage (e.g., 70%)
+      const lightness = 50; // Lightness percentage (e.g., 50%)
+
+      for (let i = 0; i < numColors; i++) {
+          const hue = Math.round((360 / numColors) * i); // Calculate the hue value
+          colors.push(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+      }
+      return colors;
+  }
+
+
+</script>
+
+{% endblock %}

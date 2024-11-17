@@ -1,0 +1,458 @@
+{% extends 'layout.html' %}
+
+{% block title %}Vote For Event{% endblock %}
+
+{% block content %}
+
+<!-- Back button -->
+{{ macros.back_button() }}
+
+<div class="event-card mb-4">
+
+    <!-- Event Image Card-->
+    <div class="card h-100 border-0 shadow-sm text-white position-relative"
+        style="background: url('{{ event.image or '/static/images/default_event.png' }}') no-repeat center center / cover;">
+        <div class="card-body d-flex flex-column justify-content-between p-4 bg-opacity-50 position-relative">
+            <div>
+                <h5 class="card-title"><b>{{ event.name }}</b></h5>
+                <p class="card-text">
+                    {% if event.status == 'approved' %}
+                    Results verifed
+                    {% elif event.start_date > CURR_TIME %}
+                    Voting starts in {{ (event.start_date - CURR_TIME) | format_relative_time }}
+                    {% elif event.end_date >= CURR_TIME %}
+                    Voting ends in {{ (event.end_date - CURR_TIME) | format_relative_time }} - Cast your vote now!
+                    {% else %}
+                    Awaiting Results Verification
+                    {% endif %}
+                </p>
+            </div>
+            <a href="{{ url_for('event.event_view', event_id=event.event_id) }}" class="stretched-link"></a>
+        </div>
+    </div>
+</div>
+
+<!--Vote status message-->
+{% if not can_vote %}
+<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- Display Candidates -->
+<div class="candidate-container row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4 mb-3">
+    {% for candidate in candidates %}
+    <div class="col" data-candidate-id="{{candidate.candidate_id}}">
+        <div class="card h-100 candidate-card"
+            onclick="window.location='{{ url_for('candidate.candidate_view', candidate_id=candidate.candidate_id) }}'"
+            data-candidate-id="{{candidate.candidate_id}}">
+            <div class="square-container">
+                <img src="{{ candidate.image }}" class="square-img card-img-top" alt="{{ candidate.name }}">
+                {% if event.enable_location %}
+                <div class="location text-light">
+                    <span>
+                        <span id="distance-{{candidate.candidate_id}}"></span>
+                        <i class="bi bi-geo-alt"></i>
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="name p-2 text-light d-flex justify-content-between">
+                <h5 class="card-title d-inline">{{ candidate.name }}</h5>
+            </div>
+            {% if show_report_btn %}
+            <a href="{{ url_for('ticket.report_an_invalid_object', candidate_id=candidate.candidate_id) }}"
+                class="btn btn-danger btn-sm" style="border-radius: 0;" role="button" data-bs-toggle="tooltip"
+                title="Report issue">
+                <i class="fas fa-exclamation-triangle"></i> Report Suspicious Votes
+            </a>
+            {% endif %}
+            <div class="card-body p-2 d-flex justify-content-between align-items-end">
+                <div>
+                    <span class="fs-3 text-success vote-count">{{ candidate.vote_count }}</span>
+                    <span class="fs-6 text-muted ms-1">votes</span>
+                </div>
+                <div class="candidate-vote-container">
+                    {% if candidate.has_voted %}
+                    <span class="text-success vote-status">Voted</span>
+                    {% elif has_voted %}
+                    <span></span>
+                    {% elif not can_vote %}
+                    <span></span>
+                    {% else %}
+                    <span class="text-success vote-status" style="display:none">Voted</span>
+                    <a href="#" class="btn btn-link vote-btn text-decoration-none"
+                        data-id="{{ candidate.candidate_id }}">Vote</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Map to show all candidates -->
+{% if event.enable_location %}
+<h5 class="text-center">Candidates Location</h5>
+{% endif %}
+<div id="map_candidates" class="my-3" {% if event.enable_location %}style="height: 400px; border-radius: 8px;" {% else
+    %} style="display:none;" {% endif %}></div>
+
+{% if event.enable_location %}
+<h5 class="text-center">Votes Heatmap</h5>
+{% endif %}
+<div id="map_votes" {% if event.enable_location %}style="height: 400px; margin-top: 20px;margin-bottom: 20px;" {% else
+    %} style="display:none;" {% endif %}></div>
+
+
+<!-- Vote Modal -->
+<div class="modal fade" id="voteModal" tabindex="-1" aria-labelledby="voteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="voteModalLabel">Confirm Vote</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to vote for this candidate?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmVoteBtn">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Leaflet CSS file -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- Leaflet JavaScript file -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    console.log('event.enable_location', {{ event.enable_location }});
+    const CURRENT_USER = {{ CURRENT_USER | tojson }};
+    const candidates = {{ candidates | tojson }};
+    const user = {{ user | tojson}};
+    const popular_location = {{ popular_location | tojson}};
+    document.addEventListener('DOMContentLoaded', function () {
+        let selectedCandidateId = null;
+        const voteButtons = document.querySelectorAll('.vote-btn');
+        const voteModal = new bootstrap.Modal(document.getElementById('voteModal'));
+        const confirmVoteBtn = document.getElementById('confirmVoteBtn');
+
+        voteButtons.forEach(button => {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation(); // Prevent triggering the card click event
+                if (CURRENT_USER) {
+                    selectedCandidateId = this.dataset.id;
+                    voteModal.show();
+                } else {
+                    window.location.href = "{{url_for('user.login')}}"
+                }
+            });
+        });
+
+        confirmVoteBtn.addEventListener('click', function () {
+            if (selectedCandidateId) {
+                fetch(`{{url_for('vote.vote')}}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ candidate_id: selectedCandidateId })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        voteModal.hide()
+                        if (data.success) {
+                            showSuccessMessage('You have voted successfully!')
+                            // window.location.reload();
+                            refreshVoteStatus()
+                        } else {
+                            showErrorMessage(data.message || 'Vote failed, please try again later.');
+                        }
+                    });
+            }
+        });
+
+        // refresh vote status
+        function refreshVoteStatus() {
+            const candidates = document.querySelectorAll('.candidate-card');
+            candidates.forEach(candidate => {
+                const candidateId = candidate.getAttribute('data-candidate-id');
+                const voteStatus = candidate.querySelector('.vote-status');
+                const voteBtn = candidate.querySelector('.vote-btn');
+                const voteCount = candidate.querySelector('.vote-count')
+
+                if (candidateId === selectedCandidateId) {
+                    voteStatus.style.display = 'inline';
+                    voteBtn.style.display = 'none';
+
+                    let currentCount = parseInt(voteCount.textContent);
+                    voteCount.textContent = currentCount + 1;
+                } else {
+                    voteBtn.style.display = 'none';
+                }
+            });
+        }
+    })
+
+    const map_candidates = L.map('map_candidates').setView([-40.9006, 174.8860], 5); // Default to New Zealand
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map_candidates);
+
+
+    const candidateIcon = L.icon({
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        shadowSize: [41, 41]
+    });
+
+    const userIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        shadowSize: [41, 41]
+    });
+
+    const popularLocationIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-orange.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        shadowSize: [41, 41]
+    });
+
+
+    const groupedEntities = {};
+
+    // Group entities by their latitude and longitude
+    candidates.forEach(candidate => {
+        const latitude = candidate.latitude;
+        const longitude = candidate.longitude;
+        const candidateName = candidate.name;
+        const candidateId = candidate.candidate_id;
+
+        // Calculate and add distance if user location is available
+        if (user && user.latitude && user.longitude && user.latitude !== 'None' && user.longitude !== 'None' && latitude && longitude && latitude !== 'None' && longitude !== 'None') {
+            const distance = calculateDistance(user.latitude, user.longitude, latitude, longitude);
+            const distanceElement = document.querySelector(`#distance-${candidate.candidate_id}`);
+            if (distanceElement) {
+                distanceElement.textContent = `${distance.toFixed(2)} km`;
+            }
+        } else {
+            const distanceElement = document.querySelector(`#distance-${candidate.candidate_id}`);
+            if (distanceElement) {
+                distanceElement.textContent = '';
+            }
+        }
+
+        if (latitude && longitude && latitude !== 'None' && longitude !== 'None') {
+            const key = `${latitude},${longitude}`;
+            if (!groupedEntities[key]) {
+                groupedEntities[key] = { candidates: [], user: null, popular: null };
+            }
+            groupedEntities[key].candidates.push({ name: candidateName, id: candidateId, image: candidate.image });
+        }
+    });
+
+    if (user && user.latitude && user.longitude && user.latitude !== 'None' && user.longitude !== 'None') {
+        const userKey = `${user.latitude},${user.longitude}`;
+        if (!groupedEntities[userKey]) {
+            groupedEntities[userKey] = { candidates: [], user: null, popular: null };
+        }
+        groupedEntities[userKey].user = 'Your Location';
+    }
+
+
+
+    // Function to calculate distance between two coordinates using Haversine formula
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius of the Earth in kilometers
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a =
+            0.5 - Math.cos(dLat) / 2 +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            (1 - Math.cos(dLon)) / 2;
+        return R * 2 * Math.asin(Math.sqrt(a));
+    }
+
+    // Add markers for each group of entities
+    Object.entries(groupedEntities).forEach(([key, entities]) => {
+        const [latitude, longitude] = key.split(',').map(Number);
+        let popupContent = '';
+
+        // Combine information for all entities at this location
+        if (entities.user) {
+            popupContent += `<b>${entities.user}</b><br>`;
+        }
+        if (entities.popular) {
+            popupContent += `<b>${entities.popular}</b><br>`;
+        }
+        if (entities.candidates.length > 0) {
+            console.log(entities.candidates)
+            popupContent += entities.candidates.map(candidate =>
+                `<a href="/candidates/${candidate.id}"><img src="${candidate.image}" alt="${candidate.name}" style="width: 100px;"></a>`
+            ).join(', ');
+
+        }
+
+
+
+        const icon = entities.user ? userIcon :
+            entities.popular ? popularLocationIcon : candidateIcon;
+
+        const marker = L.marker([latitude, longitude], { icon: icon }).addTo(map_candidates);
+        marker.bindPopup(popupContent, {
+            className: 'custom-popup'
+        });
+    });
+
+
+
+    // Initialize the map
+    const map_votes = L.map('map_votes').setView([-40.9006, 174.8860], 5); // Default to New Zealand
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map_votes);
+
+    // Initialize the icon for the markers
+    const voteIcon = L.icon({
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        shadowSize: [41, 41]
+    });
+
+    // Array to keep track of markers on the map
+    let markers = [];
+
+    // Function to add markers to the map
+    function updateMarkers(locationVotes) {
+        // Clear existing markers
+        markers.forEach(marker => map_votes.removeLayer(marker));
+        markers = [];
+
+        // Add new markers
+        locationVotes.forEach(location => {
+            const marker = L.marker([location.user_city_latitude, location.user_city_longitude], { icon: voteIcon }).addTo(map_votes);
+            marker.bindPopup(`${location.user_city_name}: ${location.vote_count} votes`);
+            markers.push(marker); // Keep track of the marker
+        });
+
+        // Add the most popular location marker
+        if (locationVotes.length > 0) {
+            const popularMarker = L.marker(
+                [locationVotes[0].user_city_latitude, locationVotes[0].user_city_longitude],
+                { icon: voteIcon }
+            ).addTo(map_votes);
+            popularMarker.bindPopup(`The most popular location: ${locationVotes[0].user_city_name}: ${locationVotes[0].vote_count} votes`);
+            markers.push(popularMarker);
+        }
+    }
+
+    // Initial marker update with data
+    updateMarkers({{ location_votes | tojson }});
+
+    // Add event listener to "Confirm" button to refresh data
+    document.getElementById('confirmVoteBtn').addEventListener('click', function () {
+        // Refresh the page
+        location.reload();
+    });
+
+
+
+
+</script>
+
+<style>
+    .candidate-card {
+        position: relative;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+    .candidate-card:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .candidate-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .candidate-card .name {
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.3);
+        width: 100%;
+        padding: 0.5rem;
+    }
+
+    .candidate-card .location {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        padding: 0.5rem;
+    }
+
+    .candidate-card .card-body {
+        background: #fff;
+    }
+
+    .square-container {
+        width: 100%;
+        padding-top: 100%;
+        /* Creates a square by setting the height to the same as the width */
+        position: relative;
+        /* Ensures the img inside will be positioned relative to this square container */
+    }
+
+    .square-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        /* Ensures the image covers the container while maintaining aspect ratio */
+    }
+
+    .leaflet-popup-content {
+
+        margin: 5px;
+        margin-top: 18px;
+    }
+
+    .leaflet-popup-content img {
+        border-radius: 8px;
+    }
+
+    .leaflet-popup-close-button span {
+        color: red
+    }
+</style>
+
+{% endblock %}

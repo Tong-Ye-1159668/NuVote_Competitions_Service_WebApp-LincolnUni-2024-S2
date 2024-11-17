@@ -1,0 +1,41 @@
+{% extends 'layout.html' %}
+
+{% block title %}Create Announcement{% endblock %}
+
+{% block content %}
+
+{{ macros.back_button() }}
+
+<h2>Create Announcement</h2>
+
+<!--Display title and content input fields-->
+<form class="row g-3 needs-validation"
+      action="{{ url_for('announcement.announcement_create') }}"
+      method="POST" novalidate>
+
+    <div class="form-floating mb-3">
+        <input type="text" class="form-control" id="title" name="title" placeholder="Title" required>
+        <label class="ms-2" for="title">Title</label>
+        <div class="invalid-feedback">Title is required</div>
+    </div>
+
+    <div class="form-floating mb-3">
+        <textarea type="text" class="form-control" id="content" name="content"
+               placeholder="content" required style="height: 100px;"></textarea>
+        <label class="ms-2" for="content">Content</label>
+        <div class="invalid-feedback">Content is required</div>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input type="datetime-local" class="form-control" id="end_at" name="end_at"
+               placeholder="End Date" required>
+        <label class="ms-2" for="end_at">End Date</label>
+        <div class="invalid-feedback">End Date is required</div>
+    </div>
+
+
+    <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+        <button type="submit" class="btn btn-success">Create</button>
+    </div>
+</form>
+{% endblock %}

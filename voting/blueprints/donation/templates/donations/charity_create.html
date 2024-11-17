@@ -1,0 +1,128 @@
+{% extends 'layout.html' %}
+
+{% block title %}Start a Donation Drive{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Back Button -->
+    {{ macros.back_button() }}
+
+    <!-- Page Title -->
+    <h1>Start a Donation Drive</h1>
+
+    <form class="row g-3 needs-validation"
+          action="{{ url_for('donation.charity_create') }}"
+          enctype="multipart/form-data"
+          method="POST" novalidate>
+
+        <input type="hidden" name="theme_id" value="{{ theme.theme_id }}">
+
+        <!-- Charity Name -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="charity_name" name="charity_name"
+                   placeholder="Charity Name" maxlength="128" required>
+            <label class="ms-2" for="charity_name">Charity Name</label>
+            <div class="invalid-feedback">Charity name is required</div>
+        </div>
+
+        <!-- Charity Description -->
+        <div class="form-floating mb-3">
+            <textarea type="text" class="form-control" id="charity_description" name="charity_description"
+                      placeholder="Charity Description"  maxlength="255" required style="height: 100px;"></textarea>
+            <label class="ms-2" for="charity_description">Charity Description</label>
+            <div class="invalid-feedback">Charity description is required (Max 255 characters)</div>
+        </div>
+
+       <!-- Charity Image -->
+        <div class="form-floating mb-3">
+            <input type="file" class="form-control" id="charity_image" name="charity_image"
+                   placeholder="Charity Image"
+                   required>
+            <label class="ms-2" for="charity_image">Charity Image</label>
+            <div class="invalid-feedback">Charity Image is required</div>
+        </div>
+
+        <!-- Charity Services Registration Number -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="reg_num" name="reg_num"
+                      placeholder="Charity Services Registration Number" maxlength="9" required>
+            <label class="ms-2" for="reg_num">Charity Services Registration Number</label>
+            <div class="invalid-feedback">Charity Services Registration Number is required</div>
+        </div>
+
+        <!-- Charity Bank Account Number -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="bank_acc" name="bank_acc"
+                      placeholder="Charity Bank Account Number" required>
+            <label class="ms-2" for="bank_acc">Charity Bank Account Number</label>
+            <div class="invalid-feedback">Charity Bank Account Number is required</div>
+        </div>
+
+        <!-- Charity IRD Number -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="ird_num" name="ird_num"
+                      placeholder="Charity IRD Number" required>
+            <label class="ms-2" for="ird_num">Charity IRD Number</label>
+            <div class="invalid-feedback">Charity IRD Number is required</div>
+        </div>
+
+        <!--Button to Create Charity-->
+        <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+            <button type="submit" class="btn btn-success">Submit your application</button>
+        </div>
+    </form>
+</div>
+
+<script>
+<!-- Bootstrap validation trigger and formatting scripts -->
+    (function () {
+        'use strict';
+        var forms = document.querySelectorAll('.needs-validation');
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    })();
+
+    // Auto-format bank account number as xx-xxxx-xxxxxxx-xx or xx-xxxx-xxxxxxx-xxx
+    document.getElementById('bank_acc').addEventListener('input', function (e) {
+        let input = e.target.value.replace(/\D/g, '');  // Remove non-digit characters
+        let formatted = '';
+
+        if (input.length <= 2) {
+            formatted = input;
+        } else if (input.length <= 6) {
+            formatted = input.slice(0, 2) + '-' + input.slice(2);
+        } else if (input.length <= 13) {
+            formatted = input.slice(0, 2) + '-' + input.slice(2, 6) + '-' + input.slice(6);
+        } else if (input.length <= 15) {
+            formatted = input.slice(0, 2) + '-' + input.slice(2, 6) + '-' + input.slice(6, 13) + '-' + input.slice(13);
+        } else {
+            formatted = input.slice(0, 2) + '-' + input.slice(2, 6) + '-' + input.slice(6, 13) + '-' + input.slice(13, 16);
+        }
+
+        e.target.value = formatted;
+    });
+
+    // Auto-format IRD number as xxx-xxx-xxx
+    document.getElementById('ird_num').addEventListener('input', function (e) {
+        let input = e.target.value.replace(/\D/g, '');  // Remove non-digit characters
+        let formatted = '';
+
+        if (input.length <= 3) {
+            formatted = input;
+        } else if (input.length <= 6) {
+            formatted = input.slice(0, 3) + '-' + input.slice(3);
+        } else {
+            formatted = input.slice(0, 3) + '-' + input.slice(3, 6) + '-' + input.slice(6, 9);
+        }
+
+        e.target.value = formatted;
+    });
+</script>
+{% endblock %}

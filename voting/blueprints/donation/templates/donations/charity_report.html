@@ -1,0 +1,187 @@
+{% extends 'layout.html' %}
+
+{% block title %}Charity Report: {{ charity.charity_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Back Button -->
+    {{ macros.back_button() }}
+
+    <h1>Donation Report for {{ charity.charity_name }}</h1>
+
+    {% if donations %}
+
+        <!-- Bootstrap Tabs -->
+        <ul class="nav nav-tabs" id="reportTabs" role="tablist">
+
+            <!-- Year Tab -->
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="year-tab" data-bs-toggle="tab" href="#year" role="tab"
+                   aria-controls="year" aria-selected="true">
+                    <i class="bi bi-calendar2-week"></i> Total by Year
+                </a>
+            </li>
+
+            <!-- Month Tab -->
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="month-tab" data-bs-toggle="tab" href="#month" role="tab"
+                   aria-controls="month" aria-selected="false">
+                    <i class="bi bi-calendar2-month"></i> Total by Month
+                </a>
+            </li>
+
+            <!-- Day Tab -->
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="day-tab" data-bs-toggle="tab" href="#day" role="tab" aria-controls="day"
+                   aria-selected="false">
+                    <i class="bi bi-calendar2-date"></i> Total by Day
+                </a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="reportTabsContent">
+            <!-- Total by Year Tab -->
+            <div class="tab-pane fade show active" id="year" role="tabpanel" aria-labelledby="year-tab">
+                <div class="table-responsive donation-table">
+                    <table class="table table-bordered table-striped table-hover align-middle table-custom">
+                        <thead>
+                        <tr>
+                            <th scope="col">Year</th>
+                            <th scope="col">Total Donations</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in total_by_year %}
+                            <tr>
+                                <td>{{ row.period }}</td>
+                                <td>${{ '%.2f'|format(row.total) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Total by Month Tab -->
+            <div class="tab-pane fade" id="month" role="tabpanel" aria-labelledby="month-tab">
+                <div class="table-responsive donation-table">
+                    <table class="table table-bordered table-striped table-hover align-middle table-custom">
+                        <thead>
+                        <tr>
+                            <th scope="col">Month</th>
+                            <th scope="col">Total Donations</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <!-- Map month number to month name -->
+                        {% set month_names = {1: 'January', 2: 'February', 3: 'March', 4: 'April',
+                        5: 'May', 6: 'June', 7: 'July', 8: 'August',
+                        9: 'September', 10: 'October', 11: 'November', 12: 'December'} %}
+                        {% for row in total_by_month %}
+                            <tr>
+                                <td>{{ month_names[row.period] }} {{ current_year }}</td>
+                                <td>${{ '%.2f'|format(row.total) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Total by Day Tab -->
+            <div class="tab-pane fade" id="day" role="tabpanel" aria-labelledby="day-tab">
+                <div class="table-responsive donation-table">
+                    <table class="table table-bordered table-striped table-hover align-middle table-custom">
+                        <thead>
+                        <tr>
+                            <th scope="col">Day</th>
+                            <th scope="col">Total Donations</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in total_by_day %}
+                            <tr>
+                                <td>{{ row.period }} {{ current_month }} {{ current_year }}</td>
+                                <td>${{ '%.2f'|format(row.total) }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <br>
+
+        <!-- Individual Donations Search -->
+        <div class="mb-4">
+            <input class="form-control" type="text" id="query" placeholder="Search donors" oninput="debounceSearch()">
+        </div>
+
+        <!-- Individual Donations -->
+        <h3>Individual Donations List</h3>
+        <br>
+        <div class="table-responsive donation-table">
+            <table class="table table-bordered table-striped table-hover align-middle table-custom">
+                <thead class="table-custom-head">
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Donor First Name</th>
+                    <th scope="col">Donor Last Name</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Amount</th>
+                </tr>
+                </thead>
+                <tbody id="donorTableBody">
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            <p>No donations have been received yet.</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Fetch donors based on search query
+    let timeout;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchUsers();
+    });
+
+    function debounceSearch() {
+        clearTimeout(timeout);
+        timeout = setTimeout(fetchUsers, 300); // 300ms debounce
+    }
+
+    function fetchUsers() {
+        const query = document.getElementById('query').value;
+        const url = `{{ url_for('donation.search_donor') }}?query=${encodeURIComponent(query)}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('donorTableBody');
+                let html = '';
+
+                if (data.success && data.data.length > 0) {
+                    data.data.forEach(donor => {
+                        html += `<tr>
+                            <td>${new Date(donor.donated_at).toLocaleDateString()}</td>
+                            <td>${donor.donor_firstname}</td>
+                            <td>${donor.donor_lastname}</td>
+                            <td class="text-break">${donor.message || ''}</td>
+                            <td>$${parseFloat(donor.amount).toFixed(2)}</td>
+                        </tr>`;
+                    });
+                } else {
+                    html = '<tr><td colspan="5" class="text-center">No donors found</td></tr>';
+                }
+                tbody.innerHTML = html;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,64 @@
+<div class="modal fade" id="approveThemeModal" tabindex="-1" aria-labelledby="approveThemeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="approveThemeModalLabel">Confirm Approve</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to approve this theme?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" id="confirmApproveThemeBtn">Approve</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let currentThemeId = null;
+    let result = null;
+
+    function showApproveThemeModal(themeId, accepted) {
+        currentThemeId = themeId;
+        result = accepted;
+        if (result) {
+            document.getElementById('approveThemeModalLabel').innerText = 'Confirm Approval';
+            document.querySelector('.modal-body').innerText = 'Are you sure you want to approve this theme?';
+            document.getElementById('confirmApproveThemeBtn').innerText = 'Approve';
+        } else {
+            document.getElementById('approveThemeModalLabel').innerText = 'Confirm Rejection';
+            document.querySelector('.modal-body').innerText = 'Are you sure you want to reject this theme?';
+            document.getElementById('confirmApproveThemeBtn').innerText = 'Reject';
+        }
+        const modal = new bootstrap.Modal(document.getElementById('approveThemeModal'));
+        modal.show();
+    }
+
+    document.getElementById('confirmApproveThemeBtn').addEventListener('click', function() {
+        if (currentThemeId) {
+            approveTheme(currentThemeId, result);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('approveThemeModal'));
+            modal.hide();
+        }
+    });
+
+    function approveTheme(themeId, result) {
+      const url = result ? "{{ url_for('theme.approve_theme', theme_id='0') }}" : "{{ url_for('theme.reject_theme', theme_id='0') }}"
+        fetch(url + themeId, {
+              method: 'POST',
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.success) {
+                  showSuccessMessage(data.message);
+                  window.dispatchEvent(new CustomEvent('themeApproved', { detail: { themeId: themeId } }));
+              } else {
+                  showErrorMessage(data.message);
+              }
+          })
+          .catch(error => {
+              showErrorMessage(`Theme ${result ? "approved" : "rejected"} failed, please try again.`);
+          });
+      }
+  </script>

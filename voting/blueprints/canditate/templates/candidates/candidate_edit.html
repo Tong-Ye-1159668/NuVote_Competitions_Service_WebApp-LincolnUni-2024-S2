@@ -1,0 +1,230 @@
+{% extends 'layout.html' %}
+
+{% block title %}Edit Candidate{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <form id="profile-form-candidate" method="POST"
+        action="{{ url_for('candidate.candidate_edit', candidate_id=candidate.candidate_id) if candidate.candidate_id else  url_for('candidate.candidate_new')}}"
+        enctype="multipart/form-data" class="needs-validation" novalidate>
+        <div class="row mb-3">
+
+            <input type="hidden" id="event_id" name="event_id" value="{{ candidate.event_id }}">
+
+
+            <!-- Candidate Name -->
+            <div class="col">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="name" name="name" value="{{ candidate.name }}" required
+                        {% if view %}readonly{% endif %}>
+                    <label for="name" class="form-label">Name</label>
+                    <div class="invalid-feedback">Name is required.</div>
+                </div>
+            </div>
+
+            <!-- Candidate Author -->
+            <div class="col">
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="author" name="author" value="{{ candidate.author }}"
+                        required {% if view %}readonly{% endif %}>
+                    <label for="author" class="form-label">Author</label>
+                    <div class="invalid-feedback">Author is required.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Candidate Description -->
+        <div class="form-floating mb-3">
+            <textarea class="form-control" id="description" name="description" rows="4" required {% if view %}readonly{%
+                endif %} style="height: 165px;">{{ candidate.description }}</textarea>
+            <label for="description" class="form-label">Description</label>
+            <div class="invalid-feedback">Description is required.</div>
+        </div>
+
+        <!-- Candidate Image -->
+        <div class="form-floating mb-3">
+            <input type="file" class="form-control" id="image" name="image" accept="image/*" {{ 'required' if not
+                candidate.image else '' }} {% if view %}disabled{% endif %} onchange="previewImage(event)">
+            <label for="image" class="form-label">Image</label>
+            <div class="invalid-feedback">Image is required.</div>
+            <!-- Image Preview -->
+            <img id="imagePreview" src="{{ candidate.image }}" alt="Image Preview" class="img-fluid mt-2"
+                style="max-width: 300px; {{ 'display:none;' if not candidate.image else '' }}">
+        </div>
+
+        <!-- Candidate Location -->
+
+        <div class="form-floating mb-3" {% if not event.enable_location %}style="display:none;" {% endif %}>
+            <input type="text" class="form-control" name="location" id="location" placeholder="Location"
+                value="{{ candidate.location }}" pattern=".{0,250}" {% if view %} readonly {% endif %} {% if
+                event.enable_location %} required {% endif %}>
+            <label for="location">Location</label>
+            <div class="invalid-feedback">
+                Location must contain only characters and numbers! Max length is 250 characters.
+            </div>
+            <ul id="suggestions" class="list-group"
+                style="position: absolute; z-index: 1000; width: 100%; display: none;"></ul>
+        </div>
+        <div id="map" class="mb-3" {% if event.enable_location %}style="height: 400px;" {% else %}style="display:none;"
+            {% endif %}>
+        </div>
+
+        <!-- Hidden fields for latitude and longitude -->
+        <input type="hidden" id="latitude" name="latitude" value="{{ candidate.latitude }}">
+        <input type="hidden" id="longitude" name="longitude" value="{{ candidate.longitude }}">
+
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-success" {% if view %}disabled{% endif %}>Save</button>
+        <button type="button" class="btn btn-secondary" onclick="goBack()">Cancel</button>
+    </form>
+</div>
+
+<!-- load leaflet-geosearch  -->
+<script src="https://unpkg.com/leaflet-geosearch@latest/dist/bundle.min.js"></script>
+<!-- Leaflet CSS file -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- load leaflet-geosearch from a CDN  -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.0.0/dist/geosearch.css" />
+<!-- Leaflet JavaScript file -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- JavaScript for Image Preview  -->
+<script>
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var output = document.getElementById('imagePreview');
+            output.src = reader.result;
+            output.style.display = 'block';
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize the map
+        var map = L.map('map').setView([-40.9006, 174.8860], 5); // Default to New Zealand
+
+        // Add OpenStreetMap tile layer
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Initialize marker variable
+        let marker;
+
+        // Function to add or remove marker
+        function updateMarker(lat, lng, label) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            if (lat && lng) {
+                marker = L.marker([lat, lng]).addTo(map);
+                marker.bindPopup(`<b>${label}</b>`).openPopup();
+            }
+        }
+
+
+        // Set up initial map location based on existing fields
+        function initializeMap() {
+            const latitude = document.getElementById('latitude').value;
+            const longitude = document.getElementById('longitude').value;
+            const locationName = document.getElementById('location').value;
+
+            if (latitude && longitude && latitude !== 'None' && longitude !== 'None') {
+                map.setView([latitude, longitude], 13);
+                updateMarker(latitude, longitude, locationName);
+            } else {
+                map.setView([-40.9006, 174.8860], 5);
+            }
+        }
+
+
+        // Bind the search control to the location input field
+        const locationInput = document.getElementById('location');
+        const suggestions = document.getElementById('suggestions');
+        let validSelection = true;
+        let debounceTimeout;
+
+        // Function to fetch suggestions from the API
+        function fetchSuggestions(query) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=nz&accept-language=en`)
+                .then(response => response.json())
+                .then(results => {
+                    suggestions.innerHTML = '';
+                    validSelection = false;
+
+                    if (results.length > 0) {
+                        results.forEach(result => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item list-group-item-action';
+                            li.textContent = result.display_name;
+
+                            li.addEventListener('click', function () {
+                                locationInput.value = result.display_name;
+                                // Set hidden fields for latitude and longitude
+                                document.getElementById('latitude').value = result.lat;
+                                document.getElementById('longitude').value = result.lon;
+                                validSelection = true;
+
+                                // Update the map and marker
+                                map.setView([result.lat, result.lon], 13); // Zoom to the location
+                                updateMarker(result.lat, result.lon, result.display_name);
+
+                                suggestions.style.display = 'none';
+                            });
+
+                            suggestions.appendChild(li);
+                        });
+                        suggestions.style.display = 'block';
+                    } else {
+                        suggestions.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching results:', error);
+                });
+        }
+
+        // Event listener for the location input
+        locationInput.addEventListener('input', function () {
+            clearTimeout(debounceTimeout);
+            const query = locationInput.value;
+
+            if (query.length > 0) {
+                debounceTimeout = setTimeout(() => {
+                    fetchSuggestions(query);
+                }, 500); // Wait 500 ms after the user stops typing
+            } else {
+                suggestions.innerHTML = ''; // Clear suggestions if the input is empty
+                suggestions.style.display = 'none'; // Hide suggestions
+            }
+        });
+
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!locationInput.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        // Validate input on form submission
+        document.getElementById('profile-form-candidate').addEventListener('submit', function (e) {
+            if (!validSelection) {
+                e.preventDefault();
+                alert('Please select a valid location from the dropdown.');
+            }
+        });
+        // Initialize map on load
+        initializeMap();
+    });
+
+
+</script>
+
+{% endblock %}

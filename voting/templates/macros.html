@@ -1,0 +1,12 @@
+{% macro back_button(url=None) %}
+<div class="mb-2" id="topBackButton">
+    {% if url %}
+        <a class="btn btn-outline-secondary" href="{{url}}"><i class="bi bi-arrow-left"></i>Back</a>
+    {% else %}
+        <button class="btn btn-outline-secondary" onclick="goBack()"><i class="bi bi-arrow-left"></i>Back</button>
+    {% endif %}
+</div>
+<script>
+
+</script>
+{% endmacro %}

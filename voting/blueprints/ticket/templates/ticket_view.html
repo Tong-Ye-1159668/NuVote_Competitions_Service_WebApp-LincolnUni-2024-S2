@@ -1,0 +1,132 @@
+{% extends 'layout.html' %}
+
+{% block title %}Ticket Details{% endblock %}
+
+{% block content %}
+
+<!-- Back button -->
+{{ macros.back_button() }}
+
+<!-- Ticket display -->
+<h1 class="text-center mb-4" style="color: #495057; font-family: 'Arial Black', Arial;">Ticket Details</h1>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 mb-3">
+            <div class="card border-0 shadow-lg rounded">
+                <div class="card-body">
+                    <div class="title-container mb-3">
+                        {% if ticket.status == 'new' %}
+                        <span class="badge bg-primary status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                        {% elif ticket.status == 'open' %}
+                        <span class="badge bg-info status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                        {% elif ticket.status == 'closed' %}
+                        <span class="badge bg-success status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                              title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+                        {% endif %}
+                        <h5 class="font-monospace fw-bold">{{ ticket.subject }}</h5>
+                    </div>
+                    <p class="card-text ticket-content">{{ ticket.content }}</p>
+                    <hr>
+                    <div class="ticket-meta text-end">
+                        {% if ticket.created_by != CURRENT_USER.user_id %}
+                        <p class="card-text"><strong>Created by:</strong> <a
+                                href="{{url_for('user.dashboard', user_id=ticket.created_by)}}">{{ ticket.created_by_username }}</a></p>
+                        {% endif %}
+                        <p class="card-text"><strong>Created at:</strong> {{ ticket.created_at | utc_2_nzst_datetime_format }}</p>
+                        <p class="card-text"><strong>Assigned to:</strong> {{ ticket.assign_to_username }}</p>
+                    </div>
+                    {% if ticket.created_by == CURRENT_USER.user_id and ticket.status != 'closed' %}
+                    <form class="row g-3 needs-validation mb-4"
+                          action="{{ url_for('ticket.cancel_ticket_by_id', ticket_id=ticket.ticket_id) }}"
+                          method="POST" novalidate>
+                        <input type="hidden" id="solution" name="solution" value="cancelled"/>
+                        <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+                            <button type="submit" class="btn btn-warning">Cancel Ticket</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Replies Section -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 mb-3">
+            <h5 class="mb-3">Replies</h5>
+            {% for reply in replies %}
+            <div class="card mb-2 border-0 shadow-sm rounded">
+                <div class="card-body">
+                    <p class="card-text"><strong>{{ reply.created_by_username }}:</strong></p>
+                    <p class="card-text">{{ reply.content }}</p>
+                    <p class="card-text text-muted"><small>Posted at: {{ reply.created_at | utc_2_nzst_datetime_format }}</small></p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if ticket.status != 'closed' %}
+    <!-- Reply Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 mb-3">
+            <div class="card border-0 shadow-lg rounded">
+                <div class="card-body">
+                    <h5 class="mb-3">Reply to Ticket</h5>
+                    <form action="{{ url_for('ticket.reply_ticket_by_id', ticket_id=ticket.ticket_id) }}" method="POST">
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Your Reply</label>
+                            <textarea class="form-control" id="content" name="content" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Send Reply</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .title-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .status-badge {
+        font-size: 0.9rem;
+    }
+
+    .ticket-content {
+        min-height: 60px; /* Keeps space for content */
+    }
+
+    .ticket-meta {
+        margin-top: 20px;
+        font-size: 1.1rem;
+    }
+
+    /* Additional styles */
+    h5 {
+        font-weight: 600;
+    }
+
+    .card {
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: scale(1.02);
+    }
+</style>
+{% endblock %}

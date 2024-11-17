@@ -1,0 +1,155 @@
+{% extends 'layout.html' %}
+
+{% block title %}Users Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">User Management</h2>
+
+    <div class="d-flex justify-content-end mb-3 gap-2">
+        <a href="{{ url_for('user.manage_banned_users') }}" class="btn btn-outline-danger" role="button">Manage Banned Users</a>
+    </div>
+    <!-- Search input field -->
+    <div class="mb-2">
+        <div class="d-flex justify-content-between align-items-center gap-3">
+            <input class="flex-grow-1 form-control" type="text" id="query" placeholder="Search users" oninput="debounceSearch()">
+            <select class="form-select" style="width: 250px;" id="role" onchange="fetchUsers()">
+                <option value="">Select role</option>
+                <option value="voter">Voter</option>
+                <option value="siteHelper">Helper</option>
+                <option value="siteAdmin">Admin</option>
+                <!-- Add more role options -->
+            </select>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="status" checked style="cursor: pointer" onchange="fetchUsers()" />
+                <label class="form-check-label" for="status-filter" style="cursor: pointer">Active</label>
+            </div>
+
+
+            <!-- Create user button -->
+            <!-- {% if CURRENT_USER.role == 'siteAdmin' %}
+            <a href="{{ url_for('user.user_create') }}" class="btn btn-success btn-lg ms-5 flex-shrink-0 flex-grow-0" role="button">Create user</a>
+            {% endif %} -->
+        </div>
+    </div>
+
+    <!-- User List table -->
+    <div class="table-responsive user-table">
+        <table class="table table-bordered table-striped table-hover align-middle table-custom">
+            <thead class="table-custom-head">
+            <tr>
+                <th scope="col">Profile Image</th>
+                <th scope="col">User ID</th>
+                <th scope="col">Username</th>
+                <th scope="col">Email</th>
+                <th scope="col">Full Name</th>
+                <!-- <th scope="col">Description</th> -->
+                <th scope="col">Location</th>
+                <th scope="col">Role</th>
+                <th scope="col">Status</th>
+                <th scope="col">Action</th>
+            </tr>
+            </thead>
+            <tbody id="userTableBody">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% include 'user/components/ban_user_modal.html' %}
+
+<script>
+let timeout;
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchUsers();
+});
+
+function debounceSearch() {
+    clearTimeout(timeout);
+    timeout = setTimeout(fetchUsers, 300); // 300ms debounce
+}
+
+function fetchUsers() {
+    const query = document.getElementById('query').value;
+    const role = document.getElementById('role').value;
+    const status = document.getElementById('status').checked ? 'active' : 'inactive';
+    url = `{{ url_for('user.search_users') }}?query=${query}&role=${role}&status=${status}`;
+    profile_url = `{{ url_for('user.dashboard', user_id=0) }}`;
+
+    fetchData(url).then(users => {
+        const tbody = document.getElementById('userTableBody');
+        let html = '';
+        users.forEach(user => {
+            html += `<tr>
+                <td><img src="${user.profile_image}" alt="Profile Image" class="profile-small" loading="lazy"></td>
+                <td>${user.user_id}</td>
+                <td><a href="${profile_url.replace('0', user.user_id)}">${user.username}</a></td>
+                <td>${user.email}</td>
+                <td>${user.first_name} ${user.last_name}</td>
+                <td>${user.location || ''}</td>
+                <td>
+                    <select class="form-select" onchange="updateUserRole(${user.user_id}, this.value)">
+                        <option value="voter" ${user.role === 'voter' ? 'selected' : ''}>Voter</option>
+                        <option value="siteHelper" ${user.role === 'siteHelper' ? 'selected' : ''}>Helper</option>
+                        <option value="siteAdmin" ${user.role === 'siteAdmin' ? 'selected' : ''}>Admin</option>
+                    </select>
+                </td>
+                <td class="">
+                    <div class="form-switch">
+                        <input class="form-check-input" title="${user.status}" type="checkbox" role="switch" id="flexSwitchCheckDefault" onchange="updateUserStatus(${user.user_id}, this.checked)" ${user.status === 'active' ? 'checked' : ''}>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-lnk text-danger text-decoration-none" onclick="banUserSiteWide(${user.user_id}, '${user.username}')">Ban User</button>
+                </td>
+            </tr>`;
+        });
+        if (users.length == 0) {
+            html = '<tr><td colspan="8" class="text-center">No users found</td></tr>';
+        }
+        tbody.innerHTML = html;
+    });
+}
+
+function updateUserRole(userId, newRole) {
+    fetch(`{{ url_for('user.update_user_role', user_id=0) }}`.replace('0', userId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole }),
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+    }).then(data => {
+        if(data.success) {
+            showSuccessMessage('User role updated successfully');
+        }else{
+            showErrorMessage(data.message);
+        }
+    });
+}
+
+function updateUserStatus(userId, isEnabled) {
+    fetch(`{{ url_for('user.update_user_status', user_id=0) }}`.replace('0', userId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: isEnabled ? 'active' : 'inactive' }),
+    }).then(response => {
+        if (response.ok) {
+            return response.json();
+        }
+    }).then(data => {
+        if(data.success) {
+            showSuccessMessage('User status updated successfully');
+        }else{
+            showErrorMessage(data.message);
+        }
+    });
+}
+</script>
+{% endblock %}

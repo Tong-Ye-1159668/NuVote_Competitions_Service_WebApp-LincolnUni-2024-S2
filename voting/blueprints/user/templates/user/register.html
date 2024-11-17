@@ -1,0 +1,186 @@
+{% extends 'layout.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <h2 class="text-center mb-4">Sign Up</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <form action="{{ url_for('user.register') }}" class="needs-validation" method="POST" novalidate>
+
+                <!--Username-->
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" name="username" id="username" placeholder="Username"
+                           value="{{ form_data['username'] }}" pattern="[A-Za-z0-9_-]{3,50}" required>
+                    <label for="username">Username</label>
+                    <div class="invalid-feedback">
+                        Username must contain only characters and numbers! Length between 3 and 50.
+                    </div>
+                </div>
+
+                <!--Email-->
+                <div class="form-floating mb-3">
+                    <input type="email" class="form-control" name="email" id="email" placeholder="Email"
+                           value="{{ form_data['email'] }}" required>
+                    <label for="email">Email address</label>
+                    <div class="invalid-feedback">
+                        Please enter a valid email (example@domain.com).
+                    </div>
+                </div>
+
+                <!--Fist name-->
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" name="first_name" id="first_name" placeholder="First name"
+                           value="{{ form_data['first_name'] }}" pattern="[A-Za-z0-9 ]{0,50}">
+                    <label for="first_name">First name (optional)</label>
+                    <div class="invalid-feedback">
+                        First name must contain only characters and numbers! Max length is 50.
+                    </div>
+                </div>
+
+                <!--Last name-->
+                <div class="form-floating mb-3">
+                    <input type="text" class="form-control" name="last_name" id="last_name" placeholder="Last name"
+                           value="{{ form_data['last_name'] }}" pattern="[A-Za-z0-9 ]{0,50}">
+                    <label for="last_name">Last name (optional)</label>
+                    <div class="invalid-feedback">
+                        Last name must contain only characters and numbers! Max length is 50.
+                    </div>
+                </div>
+
+                <!--Location-->
+                <!-- <div class="form-floating mb-3">
+                    <input type="text" class="form-control" name="location" id="location" placeholder="Location"
+                           value="{{ form_data['location'] }}" pattern="[A-Za-z0-9 ]{0,50}">
+                    <label for="location">Location (optional)</label>
+                    <div class="invalid-feedback">
+                        Location must contain only characters and numbers! Max length is 50.
+                    </div>
+                </div> -->
+
+                <!--Password-->
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" name="password" id="password" placeholder="Password"
+                           pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                           required>
+                    <label for="password">Password</label>
+                    <div class="invalid-feedback" id="passwordFeedback">
+                        Password must be at least 8 characters long and include a mix of letters, numbers, and special
+                        characters (@$!%*?&).
+                    </div>
+                    <small id="passwordHelp" class="form-text text-muted">
+                        Password must be at least 8 characters long and include a mix of letters, numbers, and special
+                        characters (@$!%*?&).
+                    </small>
+                </div>
+
+                <!--Confirm Password-->
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" name="password2" id="password2"
+                           placeholder="Confirm Password" required>
+                    <label for="password2">Confirm Password</label>
+                    <div class="invalid-feedback" id="passwordMismatchFeedback">
+                        Passwords do not match.
+                    </div>
+                </div>
+
+                <!--Sign Up-->
+                <div class="d-grid gap-2 mt-4">
+                    <button class="btn btn-success" type="submit">Sign Up</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/user.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.querySelector('form');
+        const password = document.getElementById('password');
+        const password2 = document.getElementById('password2');
+        const passwordMismatchFeedback = document.getElementById('passwordMismatchFeedback');
+        const usernameInput = document.getElementById('username');
+        const usernameTakenFeedback = document.getElementById('usernameTakenFeedback');
+        const emailInput = document.getElementById('email');
+        const EmailTakenFeedback = document.getElementById('EmailTakenFeedback');
+
+        usernameInput.addEventListener('blur', function() {
+                const username = this.value;
+				if(!(username || username.size < 3)) {
+					return
+				}
+                fetch('/user/check_username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.taken) {
+                        usernameTakenFeedback.classList.add('is-invalid');
+                        usernameTakenFeedback.style.display = 'block';
+                    } else {
+                        usernameTakenFeedback.classList.remove('is-invalid');
+                        usernameTakenFeedback.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+            emailInput.addEventListener('blur', function() {
+                const email = this.value;
+				if(!(email || email.size < 7)) {
+					return
+				}
+                fetch('/user/check_email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.taken) {
+                        EmailTakenFeedback.classList.add('is-invalid');
+                        EmailTakenFeedback.style.display = 'block';
+                    } else {
+                        EmailTakenFeedback.classList.remove('is-invalid');
+                        EmailTakenFeedback.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+
+        function updatePassword2Pattern() {
+            const passwordLength = password.value.length;
+            password2.pattern = `^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{${passwordLength},}$`;
+        }
+
+        password.addEventListener('input', updatePassword2Pattern);
+
+        // Client-side password confirmation check
+        function updatePasswordFeedback() {
+            if (password.value !== password2.value) {
+                password2.classList.add('is-invalid');
+                passwordMismatchFeedback.style.display = 'block';
+            } else {
+                password2.classList.remove('is-invalid');
+                passwordMismatchFeedback.style.display = 'none';
+            }
+        }
+
+        password2.addEventListener('input', updatePasswordFeedback);
+        password.addEventListener('input', updatePasswordFeedback);
+    });
+</script>
+{% endblock %}

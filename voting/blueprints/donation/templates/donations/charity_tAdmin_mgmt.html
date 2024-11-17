@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+
+{% block title %}Donations Management{% endblock %}
+
+{% block content %}
+    <h1>Manage Your Donation Drives for Your Charity</h1>
+
+    <!-- Back Button -->
+    {{ macros.back_button() }}
+
+    <!-- Table -->
+    {% if charities %}
+        <div class="table-responsive donation-table">
+            <table class="table table-bordered table-striped table-hover align-middle table-custom">
+                <thead class="table-custom-head">
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Registration Number</th>
+                    <th scope="col">Bank Account</th>
+                    <th scope="col">IRD Number</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for charity in charities %}
+                    <tr>
+                        <td>{{ charity.charity_name }}</td>
+                        <td class="text-break">{{ charity.charity_description }}</td>
+                        <td>{{ charity.reg_num }}</td>
+                        <td>{{ charity.bank_acc }}</td>
+                        <td>{{ charity.ird_num }}</td>
+                        <td>
+                            <!-- Display the status of the charity -->
+                            {% if charity.approved == 0 %}
+                                Declined
+                            {% elif charity.approved == 1 %}
+                                Approved
+                            {% else %}
+                                Pending
+                            {% endif %}
+                        </td>
+                        <td>
+                            <!-- Display the edit button for the pending charity -->
+                            {% if charity.approved not in [0, 1] %}
+                                <a href="{{ url_for('donation.charity_edit', charity_id=charity.charity_id, theme_id=charity.theme_id) }}"
+                                   class="btn btn-outline-primary btn-sm">Edit</a>
+                            {% endif %}
+
+                            <!-- Display the report button for the approved charity -->
+                            {% if charity.approved == 1 %}
+                                <a href="{{ url_for('donation.charity_report', charity_id=charity.charity_id, theme_id=charity.theme_id) }}"
+                                   class="btn btn-outline-success btn-sm">Report</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="alert alert-warning" role="alert">
+            <p>No charities or donation drives found.</p>
+            <p>You can go to the theme manage page to start a donation drive for your charity.</p>
+        </div>
+
+    {% endif %}
+
+{% endblock %}

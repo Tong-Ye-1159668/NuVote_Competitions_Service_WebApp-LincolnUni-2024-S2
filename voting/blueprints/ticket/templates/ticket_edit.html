@@ -1,0 +1,108 @@
+{% extends 'layout.html' %}
+
+{% block title %}Update Ticket{% endblock %}
+
+{% block content %}
+
+{{ macros.back_button() }}
+
+<h2 class="text-center mb-4">Update Ticket</h2>
+
+<!-- Read-only Ticket Details Table -->
+<table class="table table-bordered mb-4">
+    <tbody>
+    <tr>
+        <td><strong>Subject</strong></td>
+        <td>{{ ticket.subject }}</td>
+    </tr>
+    <tr>
+        <td><strong>Content</strong></td>
+        <td>{{ ticket.content }}</td>
+    </tr>
+    <tr>
+        <td><strong>Created by</strong></td>
+        <td>{{ ticket.created_by_username }}</td>
+    </tr>
+    <tr>
+        <td><strong>Status</strong></td>
+        <td>
+            {% if ticket.status == 'new' %}
+            <span class="badge bg-primary status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                  title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+            {% elif ticket.status == 'open' %}
+            <span class="badge bg-info status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                  title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+            {% elif ticket.status == 'closed' %}
+            <span class="badge bg-success status-badge" data-bs-toggle="tooltip" data-bs-placement="top"
+                  title="{{ ticket.status }}">
+                            {{ ticket.status }}
+                        </span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td><strong>Solution</strong></td>
+        <td>{{ ticket.solution }}</td>
+    </tr>
+    <tr>
+        <td><strong>Assign to</strong></td>
+        <td>{{ ticket.assign_to_username }}</td>
+    </tr>
+    </tbody>
+</table>
+
+{% if ticket.status != 'closed' %}
+<!-- Update Assign To Field -->
+<form class="row g-3 needs-validation mb-4"
+      action="{{ url_for('ticket.ticket_update_by_id', ticket_id=ticket.ticket_id) }}"
+      method="POST" novalidate>
+
+    <div class="form-floating mb-3">
+        <select class="form-select" id="assign_to" name="assign_to" required>
+            <option value="" disabled {% if ticket.assign_to is none %}selected{% endif %}>Select User</option>
+            {% if ticket.assign_to is not none %}
+            <option value="unassign">Unassign</option>
+            {% endif %}
+            {% for power_user in power_users %}
+            <option value="{{ power_user.user_id }}" {% if power_user.user_id== ticket.assign_to %}selected{% endif %}>
+                {{ power_user.username }}
+            </option>
+            {% endfor %}
+        </select>
+        <label for="assign_to">Assign to</label>
+    </div>
+
+    <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+        <button type="submit" class="btn btn-success">Save</button>
+    </div>
+</form>
+
+
+{% if ticket.assign_to is not none %}
+<!-- Update Solution Form -->
+<form class="row g-3 needs-validation mb-4"
+      action="{{ url_for('ticket.ticket_update_by_id', ticket_id=ticket.ticket_id) }}"
+      method="POST" novalidate>
+
+    <div class="form-floating mb-3">
+        <select class="form-select" id="solution" name="solution" required>
+            <option value="" disabled {% if ticket.solution is none %}selected{% endif %}>Select Solution</option>
+            <option value="cancelled" {% if ticket.solution=='cancelled' %}selected{% endif %}>Cancelled</option>
+            <option value="drop" {% if ticket.solution=='drop' %}selected{% endif %}>Drop</option>
+            <option value="resolved" {% if ticket.solution=='resolved' %}selected{% endif %}>Resolved</option>
+        </select>
+        <label for="solution">Update Solution</label>
+    </div>
+
+    <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+        <button type="submit" class="btn btn-warning">Update Solution</button>
+    </div>
+</form>
+{% endif %}
+{% endif %}
+
+{% endblock %}

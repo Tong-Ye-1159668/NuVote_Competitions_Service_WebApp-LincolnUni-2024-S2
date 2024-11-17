@@ -1,0 +1,56 @@
+{% macro theme_card(theme, current_user, showDeleteButton=False, showApproveButtons=False, showApproveResult=False, showBackground=False, link_view='theme.view') %}
+<div class="card theme-card {% if showBackground and theme.image %}text-white{% endif %}" data-theme-id="{{ theme.theme_id }}"
+  {% if showBackground and theme.image %}
+    style="position: relative; background: url('{{ theme.image }}') no-repeat center center / cover; "
+  {% endif %}
+>
+  {% if showBackground and theme.image %}
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; backdrop-filter: blur(10px); z-index: 1;"></div>
+  {% endif %}
+  <div class="card-body d-flex flex-column justify-content-between" style="position: relative; z-index: 2; height:200px">
+    <div class="flex-grow-1 align-self-start">
+      <h5 class="card-title">{{ theme.theme_name }}</h5>
+      <h6 class="card-subtitle mb-2 {% if showBackground %}text-body-light {% else %} text-body-secondary {% endif %}">proposed by {{ theme.created_by_username }} on {{ theme.created_at | utc_2_nzst_datetime_format }}</h6>
+      <p class="card-text text-break">{{ theme.theme_description }}</p>
+    </div>
+    <!-- status and actions -->
+    <div class="d-flex justify-content-between gap-2">
+
+      <div class="d-flex justify-content-start align-items-center gap-2 status-container">
+        {% if showApproveResult %}
+          {% if theme.approved == 0 %}
+            <span class="badge bg-secondary">Pending</span> 
+          {% else %}
+            {% if theme.accepted == 1 %}
+              <span class="badge bg-success">Accepted</span>
+            {% else %}
+              <span class="badge bg-danger">Rejected</span>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 actions" style="z-index: 2;">
+        {% if showDeleteButton and theme.approved == 0 and theme.created_by == current_user['user_id'] %}
+          <button class="btn btn-link text-danger text-decoration-none" 
+                  onclick="showDeleteThemeModal('{{ theme.theme_id }}')">Delete</button>
+        {% endif %}
+        {% if showApproveButtons and theme.approved == 0 and theme.created_by != current_user['user_id'] %}
+          <button class="btn btn-link text-success text-decoration-none" onclick="showApproveThemeModal('{{ theme.theme_id }}', true)">Approve</button>
+          <button class="btn btn-link text-danger text-decoration-none" onclick="showApproveThemeModal('{{ theme.theme_id }}', false)">Reject</button>
+        {% endif %}
+      </div>
+
+    </div>
+
+      <!-- Link to theme detail page -->
+      <a href="{{ url_for(link_view, theme_id=theme.theme_id) }}" class="stretched-link"></a>
+
+    </div>
+</div>
+
+<!-- This card usually import in a for loop, so cannot include modals here -->
+<!-- if showDeleteThemeModal enabled, must include theme/components/delete_theme_modal.html in parent template -->
+<!-- if showApproveThemeModal enabled, must include theme/components/approve_theme_modal.html in parent template -->
+
+{% endmacro %}

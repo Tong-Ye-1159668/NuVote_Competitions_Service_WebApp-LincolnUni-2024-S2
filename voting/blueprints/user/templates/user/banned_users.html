@@ -1,0 +1,246 @@
+{% extends 'layout.html' %}
+
+{% block title %}Manage Banned Users{% endblock %}
+
+{% block content %}
+
+{{ macros.back_button() }}
+
+{% if theme %}
+<h2>Banned Users of {{ theme.theme_name }}</h2>
+{% else %}
+<h2>Banned Users</h2>
+{% endif %}
+
+{% if not theme %}
+<div class="d-flex justify-content-end mb-3">
+    <button class="btn btn-outline-danger" onclick="selectAndBanUser({% if theme %}'{{ theme.theme_id }}'{% else %}0{% endif %})">Ban User</button>
+</div>
+{% endif %}
+
+<div class="mb-3 d-flex justify-content-between align-items-center gap-2">
+    {% if not theme %}
+    <select class="form-select" id="themeSelect" onchange="searchBannedUsers()">
+        <option value="">Select Theme</option>
+        <option value="0">[Site Wide]</option>
+        {% for tm in themes %}
+        <option value="{{ tm.theme_id }}" {{'selected' if theme and tm.theme_id == theme.theme_id else ''}}>{{ tm.theme_name }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+
+    <select class="form-select" id="userSelect" onchange="searchBannedUsers()">
+        <option value="">Select User</option>
+        {% for user in users %}
+        <option value="{{ user.user_id }}">{{ user.username }}</option>
+        {% endfor %}
+    </select>
+
+    <select class="form-select" id="revokedSelect" onchange="searchBannedUsers()">
+        <option value="">Revoked Status</option>
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+    </select>
+</div>
+
+<table class="table table-striped" id="bannedUsersTable">
+    <thead>
+        <tr>
+            <th class="text-center">User</th>
+            {% if not theme %}  
+            <th class="text-center">Theme</th>
+            {% endif %}
+            <th class="text-center">Banned At</th>
+            <th class="text-center">Banned By</th>
+            <th class="text-center">Banned Reason</th>
+            <th class="text-center">Status</th>
+            <th class="text-center">Revoked At</th>
+            <th class="text-center">Revoked By</th>
+            <th class="text-center">Appeals</th>
+            <th class="text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="bannedUsersBody">
+        <!-- Dynamic content will be inserted here -->
+    </tbody>
+</table>
+
+
+<div class="modal fade" id="revokeBanModal" tabindex="-1" aria-labelledby="revokeBanModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="revokeBanModalLabel">Revoke Ban</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to revoke the banned user?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmRevokeBanBtn">Revoke</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'user/components/ban_user_modal.html' %}
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    searchBannedUsers();
+});
+
+function searchBannedUsers() {
+    const themeId = {% if theme %}'{{ theme.theme_id }}'{% else %}document.getElementById('themeSelect').value{% endif %};
+    const userId = document.getElementById('userSelect').value;
+    const revoked = document.getElementById('revokedSelect').value;
+
+    fetch(`{{ url_for('user.search_banned_users') }}?theme_id=${themeId}&user_id=${userId}&revoked=${revoked}`)
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('bannedUsersBody');
+            html = ''; // Clear existing rows
+
+            data.data.forEach(banned_user => {
+                html += `
+                    <tr data-bs-toggle="collapse" data-bs-target="#appeals-${banned_user.ban_id}">
+                        <td class="text-center">${banned_user.username}</td>
+                        {% if not theme %}
+                        <td class="text-center">${banned_user.theme_name}</td>
+                        {% endif %}
+                        <td class="text-center">${formatDateToNZTime(banned_user.banned_at)}</td>
+                        <td class="text-center">${banned_user.banned_by_username}</td>
+                        <td class="text-center">${banned_user.banned_reason}</td>
+                        <td class="text-center">${banned_user.revoked == 1 ? '<div class="badge bg-success">Revoked</div>' : ''}</td>
+                        <td class="text-center">${banned_user.revoked_at ? formatDateToNZTime(banned_user.revoked_at) : ''}</td>
+                        <td class="text-center">${banned_user.revoked_by_username || ''}</td>
+                        <td class="text-center">${banned_user.appeal_count>0 ? `<a href="#appeals-${banned_user.ban_id}" data-bs-toggle="collapse">${banned_user.appeal_count}</a>` : ''}</td>
+                        <td class="text-center">
+                        ${banned_user.revoked == 0 ? `<button class="btn btn-link text-primary text-decoration-none" onclick="confirmRevokeBan(${banned_user.ban_id})">Revoke</button>` : ''}
+                        </td>
+                `;
+                if(banned_user.appeal_count > 0) {
+                    html += `
+                        <tr>
+                            <td colspan="{% if theme %}9{% else %}10{% endif %}" class="hiddenRow">
+                                <div class="collapse" id="appeals-${banned_user.ban_id}">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center">Appeal At</th>
+                                                <th class="text-center">Appeal Reason</th>
+                                                <th class="text-center">Processed At</th>
+                                                <th class="text-center">Processed By</th>
+                                                <th class="text-center">Status</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${banned_user.appeals.map(appeal => `
+                                                <tr>
+                                                    <td class="text-center">${formatDateToNZTime(appeal.appealed_at)}</td>
+                                                    <td class="text-center">${appeal.appealed_reason}</td>
+                                                    <td class="text-center">${appeal.processed_at ? formatDateToNZTime(appeal.processed_at) : ''}</td>
+                                                    <td class="text-center">${appeal.processed_by_username || ''}</td>
+                                                    <td class="text-center">${appeal.accepted == null ? '' : (appeal.accepted == 1 ? 'Accepted' : 'Rejected')}</td>
+                                                    <td class="text-center">
+                                                        ${appeal.processed? '' : `<button class="btn btn-link text-primary text-decoration-none" onclick="approveAppeal(${appeal.appeal_id})">Approve</button>
+                                                        <button class="btn btn-link text-primary text-decoration-none" onclick="rejectAppeal(${appeal.appeal_id})">Reject</button>`}
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (data.data.length === 0) {
+                html = `<tr><td colspan="{% if theme %}9{% else %}10{% endif %}" class="text-center text-muted">No banned users found</td></tr>`;
+            }
+            tbody.innerHTML = html;
+        });
+}
+
+function confirmRevokeBan(ban_id) {
+    currentBanId = ban_id;
+    const modal = new bootstrap.Modal(document.getElementById('revokeBanModal'));
+    modal.show();
+
+    document.getElementById('confirmRevokeBanBtn').addEventListener('click', function() {
+        if(currentBanId) {
+            revokeBan(currentBanId);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('revokeBanModal'));
+            modal.hide();
+        }
+    });
+
+}
+
+function revokeBan(ban_id) {
+        fetch(`{{ url_for('user.revoke_ban', ban_id=0) }}${ban_id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                showSuccessMessage(data.message);
+                location.reload();
+            } else {
+                showErrorMessage(data.message); 
+            }
+        });
+    }
+
+
+function approveAppeal(appeal_id) {
+    fetch(`{{ url_for('user.approve_appeal', appeal_id=0) }}`.replace('0', appeal_id), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if(data.success) {
+            showSuccessMessage(data.message);
+            location.reload();
+        } else {
+            showErrorMessage(data.message); 
+        }
+    });
+}
+
+function rejectAppeal(appeal_id) {
+    fetch(`{{ url_for('user.reject_appeal', appeal_id=0) }}`.replace('0', appeal_id), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    }).then(response => response.json())
+    .then(data => {
+        if(data.success) {  
+            showSuccessMessage(data.message);
+            location.reload();
+        } else {
+            showErrorMessage(data.message); 
+        }
+    });
+}
+</script>
+
+<style>
+    .table tbody tr td {
+        vertical-align: middle;
+    }
+    .table .hiddenRow {
+        padding: 0 !important;
+    }
+</style>
+{% endblock %}

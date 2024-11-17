@@ -1,0 +1,51 @@
+{% extends 'layout.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container mt-5 col-md-6">
+    <div class="row justify-content-center">
+        <div class="col-md-12 col-lg-8">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h3 class="card-title text-center mb-4">Login</h3>
+                    <form action="{{ url_for('user.login') }}" class="needs-validation" method="POST" novalidate>
+
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        <!--Username-->
+                        <div class="form-floating mb-3">
+                            <input type="text" class="form-control" name="username" id="username"
+                                   pattern="[A-Za-z0-9_-]{3,50}"
+                                   value="{{ username or 'admin' }}"
+                                   placeholder="Username" required>
+                            <label for="username">Username</label>
+                            <div class="invalid-feedback">
+                                Username must contain only characters and numbers! Max length is 50
+                            </div>
+                        </div>
+
+                        <!--Password-->
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" name="password" id="password"
+                                   placeholder="Password" value="Vote@2024"
+                                   required>
+                            <label for="password">Password</label>
+                            <div class="invalid-feedback">
+                                Password is required
+                            </div>
+                        </div>
+
+                        <!--Sign in and Register Buttons-->
+                        <div class="d-grid gap-2 col-md-8 col-lg-6 mx-auto">
+                            <button class="btn btn-success" type="submit">Sign in</button>
+                            <a class="btn btn-outline-success" href="{{ url_for('user.register') }}"
+                               role="button">Register</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

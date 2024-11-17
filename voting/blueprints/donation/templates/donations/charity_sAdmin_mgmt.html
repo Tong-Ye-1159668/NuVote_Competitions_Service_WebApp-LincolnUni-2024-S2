@@ -1,0 +1,130 @@
+{% extends 'layout.html' %}
+
+{% block title %}Charities Management{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+
+        <!-- Back Button -->
+        {{ macros.back_button() }}
+
+        <!-- Page Title -->
+        <h2 class="mb-4">Charity and Donation Application Management</h2>
+
+        {% if charities %}
+            <!-- Donation Application List table -->
+            <div class="table-responsive donationApplication-table">
+                <table class="table table-bordered table-striped table-hover align-middle table-custom">
+                    <thead class="table-custom-head">
+                    <tr>
+                        <th scope="col">Charity ID</th>
+                        <th scope="col">Charity Name</th>
+                        <th scope="col">Charity Description</th>
+                        <th scope="col">Charity Image</th>
+                        <th scope="col">Registration Number</th>
+                        <th scope="col">Bank Account Number</th>
+                        <th scope="col">IRD Number</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for charity in charities %}
+                        <tr class="table-custom-row">
+                            <td>{{ charity.charity_id }}</td>
+                            <td>{{ charity.charity_name }}</td>
+                            <td class="text-break">{{ charity.charity_description }}</td>
+                            <td><img src="{{ charity.charity_image }}" alt="Charity Banner"
+                                     class="img-fluid fixed-height"></td>
+                            <td>{{ charity.reg_num }}</td>
+                            <td>{{ charity.bank_acc }}</td>
+                            <td>{{ charity.ird_num }}</td>
+                            <td>{% if charity.approved == 0 %}Declined{% elif charity.approved == 1 %}Approved{% else %}
+                                Pending{% endif %}</td>
+                            <td>
+                                <!-- Check if the charity is pending -->
+                                {% if charity.approved not in [0, 1] and charity.create_by != CURRENT_USER.user_id %}
+
+                                    <!-- Approve Button -->
+                                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal"
+                                            data-bs-target="#approveModal-{{ charity.charity_id }}">
+                                        Approve
+                                    </button>
+
+                                    <!-- Decline Button -->
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal"
+                                            data-bs-target="#declineModal-{{ charity.charity_id }}">
+                                        Decline
+                                    </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Approve Modal for each charity -->
+                        <div class="modal fade" id="approveModal-{{ charity.charity_id }}" tabindex="-1"
+                             aria-labelledby="approveLabel-{{ charity.charity_id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="approveLabel-{{ charity.charity_id }}">Approve
+                                            Charity</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to approve the charity
+                                        <strong>{{ charity.charity_name }}</strong>?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close
+                                        </button>
+                                        <form method="POST"
+                                              action="{{ url_for('donation.charity_resolution', charity_id=charity.charity_id) }}">
+                                            <input type="hidden" name="resolution" value="1">
+                                            <button type="submit" class="btn btn-outline-success">Approve</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Decline Modal for each charity -->
+                        <div class="modal fade" id="declineModal-{{ charity.charity_id }}" tabindex="-1"
+                             aria-labelledby="declineLabel-{{ charity.charity_id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="declineLabel-{{ charity.charity_id }}">Decline
+                                            Charity</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                                aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Are you sure you want to decline the charity
+                                        <strong>{{ charity.charity_name }}</strong>?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close
+                                        </button>
+                                        <form method="POST"
+                                              action="{{ url_for('donation.charity_resolution', charity_id=charity.charity_id) }}">
+                                            <input type="hidden" name="resolution" value="0">
+                                            <button type="submit" class="btn btn-outline-danger">Decline</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-warning" role="alert">
+                <p>No charity or donation drive application found.</p>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}

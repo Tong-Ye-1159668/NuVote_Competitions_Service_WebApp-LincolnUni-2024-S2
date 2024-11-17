@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donation Receipt</title>
+</head>
+<body>
+    <div>
+        <h1 style="text-align: center;">Donation Receipt</h1>
+
+        <!-- Tax Credit Section -->
+        <div>
+            <p><strong>This donation qualifies for a NZ donation tax credit</strong><br>
+            This donation receipt qualifies for a tax credit because the recipient of this donation is donee approved by Inland Revenue. For more information about {{ charity.charity_name }} donations & eligibility for tax credits visit
+            https://www.ird.govt.nz/income-tax/income-tax-for-individuals/individual-tax-credits/tax-credits-for-donations</p>
+        </div>
+
+        <!-- Donor Information -->
+        <div>
+            <p><strong>Issued by:</strong></p>
+            <p>
+                {{ charity.charity_name }} <br>
+                Registration Number: {{ charity.reg_num }} <br>
+                IRD Number: {{ charity.ird_num }} <br>
+                Bank Account Number: {{ charity.bank_acc }} <br>
+            </p>
+        </div>
+
+        <!-- Receipt Information -->
+        <div>
+            <p><strong>Receipt number:</strong> {{ donation.donation_id }}</p>
+            <p><strong>Paid with:</strong> {{ donation.card_num }}</p>
+            <p><strong>Receipt date:</strong> {{ donation.donated_at | date_format }}</p>
+        </div>
+
+        <!-- Donation Details Table -->
+        <table border="1" cellpadding="10" cellspacing="0" width="100%">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Recipient</th>
+                    <th>Donation amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ donation.donated_at | date_format }}</td>
+                    <td>{{ charity.charity_name }}</td>
+                    <td>${{ donation.amount }}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2" style="text-align: right;"><strong>Total</strong></td>
+                    <td><strong>${{ donation.amount }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+
+    </div>
+</body>
+</html>

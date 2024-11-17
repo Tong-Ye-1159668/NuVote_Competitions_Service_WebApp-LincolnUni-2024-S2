@@ -1,0 +1,104 @@
+{% extends 'layout.html' %}
+
+{% block title %}Create Event{% endblock %}
+
+{% block content %}
+<div>
+    <!-- Back Button -->
+    {{ macros.back_button() }}
+
+
+    <form class="row g-3 needs-validation"
+          action="{{ url_for('event.event_create') }}"
+          enctype="multipart/form-data"
+          method="POST" novalidate>
+
+        <input type="hidden" name="theme_id" value="{{ theme.theme_id }}">
+
+        <!-- event Name -->
+        <div class="form-floating mb-3">
+            <input type="text" class="form-control" id="name" name="name" placeholder="Event Name" required>
+            <label class="ms-2" for="name">Event Name</label>
+            <div class="invalid-feedback">Event name is required</div>
+        </div>
+
+        <!-- event Description -->
+        <div class="form-floating mb-3">
+            <textarea type="text" class="form-control" id="event-description" name="description"
+                      placeholder="Event Description" required style="height: 100px;"></textarea>
+            <label class="ms-2" for="event-description">Event Description</label>
+            <div class="invalid-feedback">Event description is required</div>
+        </div>
+
+        <!-- event Image -->
+        <div class="form-floating mb-3">
+            <input type="file" class="form-control" id="image" name="image" placeholder="Event Image"
+                   required>
+            <label class="ms-2" for="image">Event Image</label>
+            <div class="invalid-feedback">Event Image is required</div>
+        </div>
+
+        <!-- event Start Date -->
+        <div class="form-floating mb-3">
+            <input type="datetime-local" class="form-control" id="start_date" name="start_date"
+                   placeholder="Event Start Date" required>
+            <label class="ms-2" for="start_date">Event Start Date</label>
+            <div class="invalid-feedback">Event Start Date is required and it cannot be in the past</div>
+        </div>
+
+        <!-- event End Date -->
+        <div class="form-floating mb-3">
+            <input type="datetime-local" class="form-control" id="end_date" name="end_date"
+                   placeholder="Event End Date" required>
+            <label class="ms-2" for="end_date">Event End Date</label>
+            <div class="invalid-feedback">Event Start Date is required and it cannot be equal to or earlier than
+                the start date
+            </div>
+        </div>
+
+        <!--Button to Create event-->
+        <div class="d-grid mt-4 col-md-8 col-lg-6 mx-auto">
+            <button type="submit" class="btn btn-success">Create</button>
+        </div>
+    </form>
+</div>
+<script>
+    // Function to set current time as default for start_date
+    function setDefaultStartDate() {
+        // Create a new date object
+        const now = new Date();
+
+        // Get the Auckland timezone offset
+        const formattedDate = now.toLocaleString("sv-SE", { timeZone: "Pacific/Auckland" }).slice(0, 16);
+
+        // Set the start_date value and minimum values for start_date and end_date fields
+        document.getElementById('start_date').value = formattedDate;
+        document.getElementById('start_date').min = formattedDate;
+        document.getElementById('end_date').min = formattedDate;
+    }
+
+
+
+    // Validate the form before submission
+    function validateForm() {
+        const startDate = new Date(document.getElementById('start_date').value);
+        const endDate = new Date(document.getElementById('end_date').value);
+        const now = new Date();
+
+        if (startDate < now) {
+            alert('Start date cannot be in the past.');
+            return false;
+        }
+
+        if (endDate <= startDate) {
+            alert('End date cannot be equal to or earlier than the start date.');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Set the default start date when the page loads
+    window.onload = setDefaultStartDate;
+</script>
+{% endblock %}

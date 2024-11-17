@@ -1,0 +1,23 @@
+<div class="d-flex flex-column gap-2">
+  {% from 'theme/components/macros.html' import theme_card %}
+  {% for theme in pending %}
+      {{ theme_card(theme, CURRENT_USER, showApproveButtons=True) }}
+  {% endfor %}
+
+  {% if pending | length == 0 %}
+  <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 200px;">
+    <p class="text-muted">No themes pending approval.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+  window.addEventListener('themeApproved', function(event) {
+    const themeId = event.detail.themeId;
+    const themeCard = document.querySelector(`.theme-card[data-theme-id="${themeId}"]`);
+    if (themeCard) {
+      themeCard.remove();
+    }
+  });
+</script>
+{% include 'theme/components/approve_theme_modal.html' %}
