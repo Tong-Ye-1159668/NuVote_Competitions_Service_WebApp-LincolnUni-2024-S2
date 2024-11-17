@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Year of Bird(YOB) is a web application built with Flask for managing user profiles, votes, and more. This application supports user registration, login, profile management, voting, and administrative functions.
+NuVote is a web application built with Flask for managing user profiles, votes, and more. This application supports user registration, login, profile management, voting, and administrative functions.
 
 ## Features
 
@@ -39,8 +39,8 @@ time.tzset()
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/yourusername/COMP639S2_project_2_Nu.git
-    cd COMP639S2_project_2_Nu
+    git clone https://github.com/Tong-Ye-1159668/NuVote_Competitions_Service_WebApp-LincolnUni-2024-S2.git
+    cd NuVote_Competitions_Service_WebApp-LincolnUni-2024-S2
     ```
 
 2. Create a virtual environment and activate it:
@@ -69,13 +69,13 @@ time.tzset()
 5. Initialize the database with the required tables. You can find the SQL scripts in the `sql/` directory. Run the scripts using your preferred method (e.g., MySQL Workbench, command line).
 ```shell
 # Create tables
-source /home/comp639nup2/COMP639S2_project_2_Nu/data/schema.sql;
+source /data/schema.sql;
 
 # Populate data
-source /home/comp639nup2/COMP639S2_project_2_Nu/data/population.sql;
+source /data/population.sql;
 
 # reset db
-source /home/comp639nup2/COMP639S2_project_2_Nu/data/reset_db.sql;
+source /data/reset_db.sql;
 
 ```
 ## Running the Application
