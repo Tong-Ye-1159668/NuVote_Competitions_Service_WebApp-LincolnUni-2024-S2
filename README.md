@@ -18,6 +18,10 @@ Voting Result Page
 
 ![image](https://github.com/user-attachments/assets/893d5ec8-5c4e-42eb-a4e6-909bec73c8d1)
 
+Voting Management Page
+
+![image](https://github.com/user-attachments/assets/74391f8f-f3e2-41c3-9ea0-0a91c0f756f3)
+
 User Profile with Location Page
 
 ![image](https://github.com/user-attachments/assets/1c99f12f-e434-4956-995c-5e99f3688bfd)
