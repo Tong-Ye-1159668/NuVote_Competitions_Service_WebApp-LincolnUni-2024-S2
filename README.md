@@ -1,4 +1,4 @@
-# Competition as a Service Platform for Conservation Groups
+# NuVote Competition as a Service Platform for Conservation Groups
 #### Submitted on 03 November 2024
 This repository contains a group project developed for the COMP 639 Studio Project during Semester 2 of my Master of Applied Computing studies at Lincoln University. Building upon our "NZ ___ of the Year" platform, this web application serves as a competition management service enabling conservation groups to create and manage their own "___ of the Year" competitions to promote environmental awareness and conservation efforts in New Zealand.
 
